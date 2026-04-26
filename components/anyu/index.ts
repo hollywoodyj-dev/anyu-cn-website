@@ -6,3 +6,4 @@ export { SafetyNotice } from "./safety-notice";
 export { SimpleSteps } from "./simple-steps";
 export { QuietCard } from "./quiet-card";
 export { WarmConnectionHome } from "./warm-connection-home";
+export { HomeHeroVisual } from "./home-hero-visual";
