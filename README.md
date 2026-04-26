@@ -85,6 +85,18 @@ Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/risk/evaluate" `
 - **`POST /api/elder-chat/message`** 会先跑 **`evaluateRiskText`**。**L3 / L4** 时 **不调 OpenAI**，返回固定安全引导（`meta.model`=`risk_gate`，`meta.chat_invoked`=`false`，`meta.risk` 为分级结果）。L0–L2 再走 LLM；成功时 `meta.chat_invoked`=`true` 且带 `meta.risk`。SSE 在拦截时仍为 `text/event-stream`（`meta` + 单条 `delta` 全文 + `done`）。**L3/L4 测试可无 `OPENAI_API_KEY`**。
 - **Consent：** `GET` / `PATCH` **`/api/consent`**、`POST` **`/api/consent/revoke`** — 无 Prisma 时统一 **HTTP `501`**，body 含 `code: NOT_IMPLEMENTED`（见 `docs/anyu/Implementation Spec.md` §8）。
 
+### Utterance STT（Step 9）
+
+- **`lib/anyu/stt.ts`** — `transcribeUtterance(bytes, mime, { language? })`；`ANYU_STT_PROVIDER` 默认 **`bridge`**（不在本机转写，由桥接把**纯文本**发到 **`message`**）。
+- **`POST /api/elder-chat/transcribe`** — `multipart/form-data`，字段 **`audio`** 或 **`file`**；可选 **`lang`**（如 `zh`）。将 `ANYU_STT_PROVIDER=openai_whisper` 且配置 **`OPENAI_API_KEY`** 后，走 OpenAI **`/v1/audio/transcriptions`**（`ANYU_OPENAI_TRANSCRIBE_MODEL` 默认 `whisper-1`）。`bridge` / `off` 时 **501** + `code: STT_USE_TEXT_BRIDGE`。
+- 与 **`message`** 相同：不在生产日志落全文音频/转写调试串（Spec §5 / §8）。
+
+### 免责确认 + middleware（Step 10）
+
+- 除 **`/cn/disclaimer`**、**`/cn/ethics`**、**`/cn/safety`** 外，访问 **`/cn/*`** 需先有 **`anyu_disclaimer_ack`**（HttpOnly，由 **`POST /api/cn/disclaimer-ack`** 在免责页勾选「进入首页」时写入）。根路径重定向到 **`/cn`** 时同样受此规则约束。
+- 本地或 CI 若需直接打开 **`/cn`**：在 **`.env.local`** 设 **`ANYU_SKIP_DISCLAIMER_MIDDLEWARE=1`**（勿用于生产）。
+- **`/api/*`** 仍可直接调用（便于 Lumen / 设备桥接）；产品级「API + 同意」可在 Prisma 与鉴权就绪后再扩。
+
 ## 部署到 Vercel（新建项目并连 GitHub）
 
 仓库：<https://github.com/hollywoodyj-dev/anyu-cn-website>。在 Cursor 里无法替你完成网页登录，请在本机浏览器按下面做一遍即可。

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { TextBlock } from "@/components/anyu";
-import { DisclaimerAcknowledge } from "./disclaimer-acknowledge";
+import { sanitizeDisclaimerNext } from "@/lib/anyu/site-disclaimer";
+import { DisclaimerAcknowledge, DisclaimerInlineNav } from "./disclaimer-acknowledge";
 
 export const metadata: Metadata = {
   title: "免责声明 | 安语",
@@ -13,7 +13,14 @@ export const metadata: Metadata = {
  * 《安语中文官网 · 免责声明页 Spec》/cn/disclaimer
  * 目标：明确边界、防止误用；清楚、直接、无歧义（不是「安慰」页）。
  */
-export default function DisclaimerPage() {
+type PageProps = {
+  searchParams: Promise<{ next?: string | string[] }>;
+};
+
+export default async function DisclaimerPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const rawNext = Array.isArray(sp.next) ? sp.next[0] : sp.next;
+  const nextHref = sanitizeDisclaimerNext(rawNext);
   return (
     <div className="space-y-12">
       <header className="space-y-3">
@@ -110,19 +117,9 @@ export default function DisclaimerPage() {
         <p className="pt-2">继续使用本系统，即表示你已阅读并同意上述说明。</p>
       </TextBlock>
 
-      <DisclaimerAcknowledge />
+      <DisclaimerAcknowledge nextHref={nextHref} />
 
-      <nav className="flex flex-wrap justify-center gap-4 border-t border-[var(--anyu-border)] pt-8 text-base">
-        <Link href="/cn/ethics" className="text-[var(--anyu-accent)] underline-offset-4 hover:underline">
-          我们的原则
-        </Link>
-        <Link href="/cn/safety" className="text-[var(--anyu-accent)] underline-offset-4 hover:underline">
-          安全与预警
-        </Link>
-        <Link href="/cn" className="text-[var(--anyu-accent)] underline-offset-4 hover:underline">
-          返回首页
-        </Link>
-      </nav>
+      <DisclaimerInlineNav />
     </div>
   );
 }

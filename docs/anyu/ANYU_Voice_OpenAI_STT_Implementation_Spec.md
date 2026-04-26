@@ -224,7 +224,8 @@ Internal helper when audio is supported:
 4. `app/api/elder-chat/session/route.ts` — **已接**（无 DB 时仅签发 UUID；Prisma 持久化后续再接）.
 5. `app/api/risk/evaluate/route.ts` + `lib/anyu/risk/evaluate.ts` + **`message` 内串联** — **已接**（`lib/anyu/risk/blocked-reply.ts`）.
 6. `app/api/consent/*` — **GET/PATCH `/api/consent`、`POST /api/consent/revoke` 已接**（无 DB 时 **501** `NOT_IMPLEMENTED`）；Prisma + 真门禁后续再接。
-7. Audio + `transcribeUtterance` only after (1) is stable.
+7. **`lib/anyu/stt.ts`** + **`POST /api/elder-chat/transcribe`** — utterance-complete；`ANYU_STT_PROVIDER=bridge|openai_whisper|off`；Whisper 需密钥；默认 bridge（**501** 提示走文本 `message`）。
+8. **`middleware.ts`** + **`POST /api/cn/disclaimer-ack`** — `/cn/*`（除 disclaimer / ethics / safety）需 HttpOnly **`anyu_disclaimer_ack`**；本地可 **`ANYU_SKIP_DISCLAIMER_MIDDLEWARE=1`**。
 
 ---
 
@@ -232,13 +233,17 @@ Internal helper when audio is supported:
 
 ```
 app/api/elder-chat/message/route.ts
+app/api/elder-chat/transcribe/route.ts
 app/api/elder-chat/session/route.ts
 app/api/risk/evaluate/route.ts
 app/api/consent/route.ts
 app/api/consent/revoke/route.ts
+app/api/cn/disclaimer-ack/route.ts
+middleware.ts
 lib/anyu/openai-chat.ts
 lib/anyu/prompts.ts
 lib/anyu/stt.ts
+lib/anyu/site-disclaimer.ts
 lib/anyu/risk/evaluate.ts
 lib/anyu/risk/blocked-reply.ts
 ```
