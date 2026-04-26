@@ -27,6 +27,20 @@ npm run dev
 - Next.js 15、React 19、Tailwind CSS 4
 - 页面均在 `app/cn/…`
 
+## 长者对话 API（P0）
+
+见 `docs/anyu/ANYU_Voice_OpenAI_STT_Implementation_Spec.md`。环境变量示例：`.env.example`（复制为 `.env.local` 并填入 `OPENAI_API_KEY`）。
+
+本地 smoke（需已配置密钥；PowerShell）：
+
+```powershell
+Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/elder-chat/message" `
+  -ContentType "application/json" `
+  -Body '{"message":"我今天有点想孩子","lang":"zh"}'
+```
+
+成功时返回 `assistant_message`、`conversation_id`、`meta`（含 `model`、`prompt_version`、`turn_id`）。上游失败时 HTTP `502`，仍带简短兜底的 `assistant_message`。
+
 ## 部署到 Vercel（新建项目并连 GitHub）
 
 仓库：<https://github.com/hollywoodyj-dev/anyu-cn-website>。在 Cursor 里无法替你完成网页登录，请在本机浏览器按下面做一遍即可。
