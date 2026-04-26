@@ -6,7 +6,7 @@
 
 ### QA result (Lumen)
 
-- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（**A1–A12** 为 Lumen 已签；**A13–A17** 为 Step 7–8 新增项，待复测后并入 Result 文件）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
+- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（Lumen 已签 **A1–A17**，含 risk gate **A13–A14**、consent **A15–A17**）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
 
 ### Project path & URLs (for this QA pass)
 

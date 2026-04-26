@@ -2,13 +2,9 @@
 
 ## 2026-04-27
 
-- **Lumen QA（官网 + P0 `POST /api/elder-chat/message`）：PASS。** 记录：`docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`。Watchpoint：移动端以实现检视为主，若产品要更严签核可补一轮真机窄屏渲染。
-- 部署基线：`https://anyu-cn-website.vercel.app`（中文 `/cn`）。
-- **API Step 3–4：** README / `.env.example` 补全 Vercel 与本地 env 说明；`POST /api/elder-chat/message` 支持 SSE（`Accept: text/event-stream` 或 `"stream": true`），事件 `meta` → `delta` → `done`（`lib/anyu/openai-chat.ts`）。
-- **Lumen 复测（SSE 上线后）：** `A8`/`A9` **PASS**（Vercel 实测 `200`、`text/event-stream`、`meta`→`delta`）；QA 记录更新为 **A1–A9**，见 `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`。Watchpoint 仍为移动端真机渲染未做。
-- **API Step 5–6：** `POST /api/elder-chat/session`（UUID、`meta.persistence: none`）；`POST /api/risk/evaluate` + `lib/anyu/risk/evaluate.ts`（L0–L4 硬编码短语，与 Elder Agent §4.2 对齐）。`message` 内先 risk 再回复尚未接。
-- **Lumen（Vercel）：** **A10–A12 PASS**；`活着没意思` → **L3**（非 L4），与实现一致；QA 结果全文已更新至 **A1–A12**（`docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`）。
-- **API Step 7–8：** `message` 先 `evaluateRiskText`，L3/L4 **不调 OpenAI**（`meta.model=risk_gate`）；`GET`/`PATCH` `/api/consent`、`POST` `/api/consent/revoke` → **501** stub。
+- **Lumen QA：PASS（A1–A17）。** 记录：`docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`（Vercel **01:10** Sydney 更新）。含：官网与政策页、JSON/SSE **`message`**、**session**、独立 **risk**、**risk_gate**（A13–A14）、**consent 501**（A15–A17）。**Watchpoint：** 移动端仍以实现检视为主，未做真机全屏渲染。
+- **部署：** `https://anyu-cn-website.vercel.app`（中文 `/cn`）。
+- **API 里程碑：** Step 3–4 SSE；Step 5–6 `session` + `risk/evaluate`；Step 7–8 **`message` 内先 risk**（L3/L4 → `risk_gate`，不调 LLM）+ **consent** `501` 占位。
 
 ## 2026-04-26
 

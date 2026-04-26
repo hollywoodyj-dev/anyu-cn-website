@@ -1,7 +1,7 @@
 # QA result — 安语 AnYu 中文官网 + P0 对话 API（Lumen）
 
-**Date:** 2026-04-27 01:05 Australia/Sydney  
-**Scope:** W1–W5, C1–C3, E1–S2, A1–A12  
+**Date:** 2026-04-27 01:10 Australia/Sydney  
+**Scope:** W1–W5, C1–C3, E1–S2, A1–A17  
 **Base URL:** `https://anyu-cn-website.vercel.app`
 
 ## Overall
@@ -71,8 +71,13 @@ Small watchpoint only: **W5 mobile layout was verified by implementation inspect
 | A10 | PASS | `POST /api/elder-chat/session` with `{}` returned HTTP `200`, UUID `session_id`, and `meta.persistence: "none"`. |
 | A11 | PASS | `POST /api/risk/evaluate` with safe text returned `level: "L0"`, empty `signals`, and `version: "risk-v0"`. |
 | A12 | PASS | `POST /api/risk/evaluate` with exact L4 phrase `我想死` returned `level: "L4"` and `signals: ["self_harm_imminent"]`. Important distinction: `活着没意思` correctly returns `L3`, matching the implementation rules. |
+| A13 | PASS | `POST /api/elder-chat/message` with `我想死` returned HTTP `200`, blocked safety guidance, `meta.model: "risk_gate"`, `meta.chat_invoked: false`, and `meta.risk.level: "L4"`. |
+| A14 | PASS | SSE version of the same L4 message returned `text/event-stream` with `type:"meta"` including `model: "risk_gate"`, `chat_invoked: false`, and `risk`, then a single full-message `delta`, then `done`. |
+| A15 | PASS | `GET /api/consent` returned HTTP `501` with JSON `code: "NOT_IMPLEMENTED"`. |
+| A16 | PASS | `PATCH /api/consent` returned HTTP `501` with JSON `code: "NOT_IMPLEMENTED"`. |
+| A17 | PASS | `POST /api/consent/revoke` returned HTTP `501` with JSON `code: "NOT_IMPLEMENTED"`. |
 
-### A1 / A8 / A10–A12 sample behavior
+### A1 / A8 / A10–A17 sample behavior
 The deployed API returned natural Chinese output when tested via Node fetch (PowerShell console display showed mojibake, but raw API content is correct UTF-8 text).
 
 SSE was also confirmed live on Vercel with streamed lines in this shape:
@@ -85,6 +90,8 @@ New live API checks also confirmed:
 - risk evaluator returns `L0` for safe text
 - risk evaluator returns `L4` for the exact self-harm trigger `我想死`
 - `活着没意思` is currently an `L3` severe-distress rule, not `L4`
+- risk-gated chat blocks the L4 message before any LLM call and returns `model: "risk_gate"`
+- consent APIs are intentionally present as `501 NOT_IMPLEMENTED` placeholders
 
 ---
 
@@ -96,7 +103,7 @@ Safe to forward as:
 - web smoke passed
 - copy / tone passed
 - ethics / disclaimer / safety consistency passed
-- P0 API contract, failure handling, SSE stream shape, session issuance, and standalone risk evaluation passed
+- P0 API contract, failure handling, SSE stream shape, session issuance, standalone risk evaluation, risk-gated chat behavior, and consent placeholder contracts passed
 
 ## Watchpoint
 
