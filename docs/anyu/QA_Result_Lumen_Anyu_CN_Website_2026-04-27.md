@@ -1,13 +1,13 @@
 # QA result — 安语 AnYu 中文官网 + P0 对话 API（Lumen）
 
-**Date:** 2026-04-27 01:10 Australia/Sydney  
-**Scope:** W1–W5, C1–C3, E1–S2, A1–A17  
+**Date:** 2026-04-27 Australia/Sydney（**01:10** 基线签 A1–A17；同日追加 **Step 9–10**：免责 middleware + `disclaimer-ack` + `/api/elder-chat/transcribe` 合约）  
+**Scope:** W1–W5, C1–C3, E1–S2, A1–A17；**+** 免责 cookie 门、STT transcribe（bridge 合约）  
 **Base URL:** `https://anyu-cn-website.vercel.app`
 
 ## Overall
 
 **Result: PASS**  
-Small watchpoint only: **W5 mobile layout was verified by implementation inspection rather than a full live viewport render pass** on this host.
+Watchpoints only: **W5** mobile layout was verified by implementation inspection rather than a full live phone render; **STT** full `openai_whisper` transcription was not exercised on Vercel（部署仍为 **bridge** 合约，**501** `STT_USE_TEXT_BRIDGE` 为预期）.
 
 ---
 
@@ -49,7 +49,7 @@ Small watchpoint only: **W5 mobile layout was verified by implementation inspect
 |---|---|---|
 | E1 | PASS | `/cn/ethics` includes five principles, data/privacy, elder protection, and cross-links. |
 | E2 | PASS | `/cn/disclaimer` clearly states non-medical, non-emergency, non-substitution boundaries. |
-| E3 | PASS | Disclaimer acknowledge UI works by implementation: unchecked state shows disabled text-only `进入首页`; checked state reveals actual link to `/cn`. |
+| E3 | PASS | Disclaimer UI: unchecked shows非按钮态；勾选后「进入首页」触发 **`POST /api/cn/disclaimer-ack`** 写 **HttpOnly** cookie 再跳转；与 middleware **307 → `/cn/disclaimer?next=…`** 行为一致（见下文 Additional）。 |
 | S1 | PASS | `/cn/safety` risk-tier language is aligned with expected escalation framing. |
 | S2 | PASS | No contradiction found across `/cn/safety`, `/cn/disclaimer`, and `/cn/ethics` around emergency handling, human priority, or notification boundaries. |
 
@@ -104,7 +104,31 @@ Safe to forward as:
 - copy / tone passed
 - ethics / disclaimer / safety consistency passed
 - P0 API contract, failure handling, SSE stream shape, session issuance, standalone risk evaluation, risk-gated chat behavior, and consent placeholder contracts passed
+- **Step 9–10:** disclaimer **middleware + server ack** live（307、`Secure` cookie、`/cn/ethics` 免门）；**transcribe** 在 **bridge** 下 **501** / 错误 **Content-Type** 返回 **400** 合约成立；`next` 开放重定向防护已核对
+
+## Additional live checks — disclaimer middleware + STT
+
+### Disclaimer middleware / server ack
+
+- Direct unauthenticated `GET /cn` now returns **HTTP 307** to `/cn/disclaimer?next=%2Fcn`.
+- Public policy page access remains open as intended: `GET /cn/ethics` returned **HTTP 200** without disclaimer ack.
+- `POST /api/cn/disclaimer-ack` returned **HTTP 200** and set cookie:
+  - `anyu_disclaimer_ack=1`
+  - `HttpOnly`
+  - `SameSite=Lax`
+  - `Secure` (on production deploy)
+- Reusing that cookie against `/cn` returned **HTTP 200**, confirming the server ack + middleware pass-through flow works.
+- Open-redirect protection for `next` is implemented in `sanitizeDisclaimerNext()` and only allows relative `/cn...` paths; external / malformed targets fall back to `/cn`.
+
+### STT route contract
+
+- `POST /api/elder-chat/transcribe` with multipart audio on current Vercel deploy returned **HTTP 501** and:
+  - `code: "STT_USE_TEXT_BRIDGE"`
+  - message instructing callers to send plain text to `/api/elder-chat/message`
+- This matches the expected default bridge mode when server STT is not enabled.
+- Negative contract check also passed: wrong content type (`application/json`) returned **HTTP 400** with `Expected multipart/form-data with field \`audio\` or \`file\`.`
 
 ## Watchpoint
 
 - **Mobile visual QA**: implementation looks sound, but if product wants stricter sign-off, do one manual phone-sized render check on deployed `/cn` and `/cn/disclaimer` before broader release.
+- **STT full transcription path**: not exercised on Vercel because the current deploy is still in bridge-mode contract (`501 STT_USE_TEXT_BRIDGE`), not `openai_whisper` mode.

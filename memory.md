@@ -2,7 +2,7 @@
 
 ## 2026-04-27
 
-- **Lumen QA：PASS（A1–A17）。** 记录：`docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`（Vercel **01:10** Sydney 更新）。含：官网与政策页、JSON/SSE **`message`**、**session**、独立 **risk**、**risk_gate**（A13–A14）、**consent 501**（A15–A17）。**Watchpoint：** 移动端仍以实现检视为主，未做真机全屏渲染。
+- **Lumen QA：PASS（A1–A17 + Step 9–10 合约）。** 记录：`docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`。含前述 API；追加实机：**`/cn`→307 免责门**、**`POST /api/cn/disclaimer-ack`**（`Secure`+`HttpOnly`+`Lax`）、**`/cn/ethics` 无 ack 可进**、**`transcribe` bridge 501** / 非 multipart **400**、**`next` 防开放重定向**。**Watchpoint：** 移动端真机渲染；Vercel 未开 **`openai_whisper`** 故未签「真转写」路径。
 - **部署：** `https://anyu-cn-website.vercel.app`（中文 `/cn`）。
 - **API 里程碑：** Step 3–4 SSE；Step 5–6 `session` + `risk/evaluate`；Step 7–8 **`message` 内先 risk**（L3/L4 → `risk_gate`，不调 LLM）+ **consent** `501` 占位；**Step 9–10** `stt` + **`/api/elder-chat/transcribe`**；**middleware** + **`/api/cn/disclaimer-ack`**（`/cn` 门；`/api` 未门控）。
 
