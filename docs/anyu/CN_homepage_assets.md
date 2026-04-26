@@ -36,6 +36,10 @@
 
 ## 顶栏 Logo
 
-- 路径：**`public/anyu/anyu-logo-mark.png`**（与 `app/cn/layout.tsx` 一致）。
-- 请使用 **透明底 PNG**；头栏使用 `object-contain`、**不做圆形裁切**，避免误看成黑底。
-- 若文件本身带黑底，需从设计导出 **透明背景** 后再覆盖。
+- **使用文件：** `public/anyu/anyu-logo-mark.png`（与 `app/cn/layout.tsx`、根 `metadata.icons` 一致）。
+- 若手头的标是 **黑底位图**（设计常见导出），将源文件存为 **`public/anyu/anyu-logo-source.png`**，在仓库根执行：
+
+  `npm run logo:transparent`
+
+  会用脚本去近黑底并输出 **`anyu-logo-mark.png`**（200px 内接正方形，透明底）。仍不满意时在矢量软件里改源再导出、覆盖 `anyu-logo-source.png` 后重跑即可。
+- 头栏为 **`object-contain`**、**不圆切**，与浅色条融合。
