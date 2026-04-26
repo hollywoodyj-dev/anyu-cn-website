@@ -43,15 +43,15 @@ export default function CnLayout({ children }: { children: React.ReactNode }) {
             <Image
               src={ANYU_LOGO_MARK}
               alt=""
-              width={48}
-              height={48}
-              className="h-11 w-auto max-h-11 shrink-0 object-contain object-left"
-              sizes="(max-width: 768px) 48px, 56px"
+              width={80}
+              height={80}
+              className="h-14 w-auto max-h-14 shrink-0 object-contain object-left md:h-16 md:max-h-16"
+              sizes="(max-width: 768px) 56px, 64px"
               priority
             />
             <div className="leading-tight">
-              <div className="text-lg font-medium text-[var(--anyu-ink)]">安语</div>
-              <div className="text-xs tracking-wide text-[var(--anyu-ink-muted)]">让爱，被听见</div>
+              <div className="text-xl font-medium text-[var(--anyu-ink)] md:text-2xl">安语</div>
+              <div className="text-sm tracking-wide text-[var(--anyu-ink-muted)]">让爱，被听见</div>
             </div>
           </Link>
           <div className="flex flex-1 flex-wrap items-center justify-end gap-3 md:gap-5">
