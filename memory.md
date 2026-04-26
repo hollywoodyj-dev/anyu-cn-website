@@ -1,5 +1,10 @@
 # 安语 AnYu — Nova 记忆（事实 / 交接）
 
+## 2026-04-27
+
+- **Lumen QA（官网 + P0 `POST /api/elder-chat/message`）：PASS。** 记录：`docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`。Watchpoint：移动端以实现检视为主，若产品要更严签核可补一轮真机窄屏渲染。
+- 部署基线：`https://anyu-cn-website.vercel.app`（中文 `/cn`）。
+
 ## 2026-04-26
 
 - 在 `c:\github\anyu-cn-website` 初始化独立 Next 15 工作区；实现 Spec V1 路由与锁账文案、基础 `anyu` 组件与 `AGENTS.md`。

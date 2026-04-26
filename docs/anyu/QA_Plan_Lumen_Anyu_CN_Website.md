@@ -4,6 +4,10 @@
 **Repo:** `anyu-cn-website` (Next.js 15, App Router, Vercel-capable).  
 **Product stance:** Non-Substitution; site copy is **locked** unless product explicitly changes it; safety/ethics/disclaimer must stay **aligned** with Risk Engine + Human Override language (see `AGENTS.md`, `rule spec.md`, `disclaimer.md`, `memory.md`).
 
+### QA result (Lumen)
+
+- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（含 W/C/E/S/A 全表）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
+
 ### Project path & URLs (for this QA pass)
 
 | What | Value |
