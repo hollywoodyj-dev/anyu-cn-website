@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { HomeHeroVisual } from "./home-hero-visual";
+import { LampAndAppShowcase } from "./lamp-app-showcase";
 import { SafetyNotice } from "./safety-notice";
 
 /**
@@ -71,9 +72,10 @@ export function WarmConnectionHome() {
             </div>
           </div>
 
-          {/* Hero 视觉：有整图则与设计稿一致；否则回退 CSS 三卡 + 可选 lamp/app 截图 */}
           <HomeHeroVisual />
         </section>
+
+        <LampAndAppShowcase />
 
         {/* 共鸣 */}
         <section className="mx-auto max-w-6xl pb-16 md:pb-20" aria-labelledby="empathy-heading">
