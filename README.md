@@ -39,6 +39,7 @@ npm run dev
 | `ANYU_OPENAI_CHAT_MODEL` | 否 | 默认 `gpt-5.4`；可改为组织批准的模型或快照 ID。 |
 | `ANYU_SYSTEM_PROMPT` | 否 | 整段覆盖默认 system prompt。 |
 | `ANYU_PROMPT_VERSION` | 否 | 默认 `v0`；与 prompt 变更一起 bump。 |
+| `ANYU_RISK_RULES_VERSION` | 否 | 默认 `risk-v0`；与 `lib/anyu/risk/evaluate.ts` 规则变更同步。 |
 
 在 Vercel 修改变量后需 **Redeploy**，预览环境若也要测 API，请在 **Preview** 环境同样配置密钥（或仅 Production 测）。
 
@@ -65,6 +66,18 @@ Windows 推荐用 **`curl.exe`**（跟 `-N` 不缓冲）：
 curl.exe -sN -H "Accept: text/event-stream" -H "Content-Type: application/json" `
   -d "{\"message\":\"你好\",\"lang\":\"zh\"}" `
   "http://localhost:3000/api/elder-chat/message"
+```
+
+### Session + Risk（Step 5–6）
+
+- **`POST /api/elder-chat/session`** — body 可为 `{}`；返回 `{ "session_id": "<uuid>", "meta": { "timestamp", "persistence": "none" } }`。将 `session_id` 传给 **`message`** 的 `session_id` 即可对齐 `conversation_id`（无 DB 时不校验「未知 session」）。
+- **`POST /api/risk/evaluate`** — body：`{ "text": "…", "session_id?": "…", "context?": "…" }`；返回 `{ "level": "L0"|…|"L4", "signals": [], "version": "risk-v0" }`。规则与 `docs/anyu/Elder Emotional Communication Agent.md` §4.2 硬编码短语一致（纯函数：`lib/anyu/risk/evaluate.ts`）。
+
+```powershell
+Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/elder-chat/session" `
+  -ContentType "application/json" -Body '{}'
+Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/risk/evaluate" `
+  -ContentType "application/json" -Body '{"text":"我想死"}'
 ```
 
 ## 部署到 Vercel（新建项目并连 GitHub）

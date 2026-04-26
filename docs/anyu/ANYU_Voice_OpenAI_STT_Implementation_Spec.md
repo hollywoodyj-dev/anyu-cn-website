@@ -221,8 +221,8 @@ Internal helper when audio is supported:
 1. `app/api/elder-chat/message/route.ts` — text in, OpenAI out, env model, errors.
 2. Vercel env + smoke test（README：JSON + UTF-8 说明）.
 3. SSE streaming on same route（`Accept: text/event-stream` 或 `"stream": true`）— **已接**；事件：`meta` / `delta` / `done`.
-4. `app/api/elder-chat/session/route.ts` + Prisma when conversations persist.
-5. `app/api/risk/evaluate/route.ts` stub + `lib/anyu/risk/*`.
+4. `app/api/elder-chat/session/route.ts` — **已接**（无 DB 时仅签发 UUID；Prisma 持久化后续再接）.
+5. `app/api/risk/evaluate/route.ts` + `lib/anyu/risk/evaluate.ts` — **已接**（硬编码规则 v0；与 `message` 串联为下一步）.
 6. `app/api/consent/*` when legal/consent schema is ready.
 7. Audio + `transcribeUtterance` only after (1) is stable.
 

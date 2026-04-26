@@ -80,6 +80,9 @@ Use the **Vercel URL** for sections **1–3** (browser). Use the **same origin**
 | A7 | Secret leak | Browser devtools → Network → response headers/body | **Never** `OPENAI_API_KEY` or raw Authorization in client-visible assets for this route (server-only). |
 | A8 | SSE — trigger | `POST` with header `Accept: text/event-stream` **或** body `"stream":true` | HTTP `200`; `Content-Type` 含 `text/event-stream`; body 为 SSE 行（非整段 JSON）. |
 | A9 | SSE — shape | Read first `data:` lines | 首条为 `type:meta`（含 `conversation_id`、`turn_id`）；随后有 `type:delta`；末条为 `type:done`（或 `type:error`）. |
+| A10 | Session | `POST /api/elder-chat/session` body `{}` | HTTP `200`；`session_id` 为 UUID；`meta.persistence` 为 `none`（无 DB 时）. |
+| A11 | Risk L0 | `POST /api/risk/evaluate` `{"text":"今天天气不错"}` | `level`=`L0`，`signals` 为空数组，`version` 含 `risk-`. |
+| A12 | Risk L4 | `POST /api/risk/evaluate` `{"text":"我想死"}` | `level`=`L4`；`signals` 含 `self_harm_imminent`. |
 
 Optional (PowerShell example for Lumen):
 
@@ -103,7 +106,7 @@ curl.exe -sN -H "Accept: text/event-stream" -H "Content-Type: application/json" 
 
 ## 5. Out of scope for this pass (record as N/A or future)
 
-- Full **Risk Engine** integration inside `message` (P1 stub `/api/risk/evaluate` not required for this checklist unless shipped).
+- **`message` 内先跑 risk 再分支**（L3/L4 阻断普通回复）：`/api/risk/evaluate` 已可独立调用；接入 `message` 为下一步。
 - **Consent** persistence APIs (`GET/PATCH/POST revoke`) — until Prisma/schema exists.
 - **Audio / STT** on Vercel — bridge text-in path only for P0.
 - **子女端 dashboard** / notifications / charts.
@@ -116,7 +119,7 @@ curl.exe -sN -H "Accept: text/event-stream" -H "Content-Type: application/json" 
 |------|--------|------|---------------|-------|
 | Web smoke W1–W5 | Lumen | | | |
 | Consistency E1–S2 | Lumen | | | |
-| API A1–A7 | Lumen | | | |
+| API A1–A12 | Lumen | | | |
 | Product | Chino / Holly | | | |
 
 ---

@@ -6,6 +6,7 @@
 - 部署基线：`https://anyu-cn-website.vercel.app`（中文 `/cn`）。
 - **API Step 3–4：** README / `.env.example` 补全 Vercel 与本地 env 说明；`POST /api/elder-chat/message` 支持 SSE（`Accept: text/event-stream` 或 `"stream": true`），事件 `meta` → `delta` → `done`（`lib/anyu/openai-chat.ts`）。
 - **Lumen 复测（SSE 上线后）：** `A8`/`A9` **PASS**（Vercel 实测 `200`、`text/event-stream`、`meta`→`delta`）；QA 记录更新为 **A1–A9**，见 `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`。Watchpoint 仍为移动端真机渲染未做。
+- **API Step 5–6：** `POST /api/elder-chat/session`（UUID、`meta.persistence: none`）；`POST /api/risk/evaluate` + `lib/anyu/risk/evaluate.ts`（L0–L4 硬编码短语，与 Elder Agent §4.2 对齐）。`message` 内先 risk 再回复尚未接。
 
 ## 2026-04-26
 
