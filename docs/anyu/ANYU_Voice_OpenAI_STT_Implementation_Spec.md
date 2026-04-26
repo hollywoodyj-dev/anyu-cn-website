@@ -192,6 +192,9 @@ Persist with Prisma when schema exists (`ConsentSetting`, etc.); until then retu
 | **Cloud one-shot** | e.g. OpenAI `v1/audio/transcriptions` per utterance WAV. |
 | **xiaozhi STREAM ASR** | Not required for v1. |
 
+**Cross-reference (ESP / xiaozhi `InterfaceType` vs AnYu):**  
+`docs/anyu/ANYU_STT_ESP_xiaozhi_alignment.md` — maps **STREAM / NON_STREAM / LOCAL** providers under `…/core/providers/asr` to **`bridge`** vs **`openai_whisper`**, and states the **recommended production path** (device utterance-complete → text → `message`).
+
 Internal helper when audio is supported:
 
 `transcribeUtterance(bytes, mime) -> { text, language?, durationMs? }`  
