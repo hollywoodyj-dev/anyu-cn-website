@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/*
+  安语 AnYu — 风格锁死（Spec V1）
+  浅色 / 柔和；字大 / 清晰；低对比 / 温暖；几乎无动效。
+*/
+:root {
+  --anyu-bg: #f7f3ed;
+  --anyu-bg-card: #fdfaf6;
+  --anyu-ink: #3a3632;
+  --anyu-ink-muted: #6b645c;
+  --anyu-accent: #8b7355;
+  /* 免责声明等：少量强调（《免责声明页 Spec》） */
+  --anyu-risk: #b85858;
+  --anyu-border: rgba(58, 54, 50, 0.12);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--anyu-ink);
+  background: var(--anyu-bg);
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 1.25rem;
+    line-height: 1.8;
+  }
+}
