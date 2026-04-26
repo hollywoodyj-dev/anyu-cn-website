@@ -5,6 +5,7 @@
 - **Lumen QA（官网 + P0 `POST /api/elder-chat/message`）：PASS。** 记录：`docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`。Watchpoint：移动端以实现检视为主，若产品要更严签核可补一轮真机窄屏渲染。
 - 部署基线：`https://anyu-cn-website.vercel.app`（中文 `/cn`）。
 - **API Step 3–4：** README / `.env.example` 补全 Vercel 与本地 env 说明；`POST /api/elder-chat/message` 支持 SSE（`Accept: text/event-stream` 或 `"stream": true`），事件 `meta` → `delta` → `done`（`lib/anyu/openai-chat.ts`）。
+- **Lumen 复测（SSE 上线后）：** `A8`/`A9` **PASS**（Vercel 实测 `200`、`text/event-stream`、`meta`→`delta`）；QA 记录更新为 **A1–A9**，见 `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md`。Watchpoint 仍为移动端真机渲染未做。
 
 ## 2026-04-26
 

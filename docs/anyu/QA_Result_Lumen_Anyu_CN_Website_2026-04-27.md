@@ -1,7 +1,7 @@
 # QA result — 安语 AnYu 中文官网 + P0 对话 API（Lumen）
 
-**Date:** 2026-04-27 00:42 Australia/Sydney  
-**Scope:** W1–W5, C1–C3, E1–S2, A1–A7  
+**Date:** 2026-04-27 00:57 Australia/Sydney  
+**Scope:** W1–W5, C1–C3, E1–S2, A1–A9  
 **Base URL:** `https://anyu-cn-website.vercel.app`
 
 ## Overall
@@ -66,9 +66,16 @@ Small watchpoint only: **W5 mobile layout was verified by implementation inspect
 | A5 | PASS | Local production start on port `3015` with missing `OPENAI_API_KEY` returned HTTP `503` and safe config error message, no stack trace. |
 | A6 | PASS | Local production start on port `3016` with invalid key/model returned HTTP `502`, short fallback `assistant_message`, and no fake success behavior. |
 | A7 | PASS | No `OPENAI_API_KEY` or `sk-` token found in built client assets under `.next/static`; API response headers/body did not expose auth material. |
+| A8 | PASS | Vercel deploy now responds to `Accept: text/event-stream` + `"stream": true` with HTTP `200` and `Content-Type: text/event-stream; charset=utf-8`. |
+| A9 | PASS | Observed normalized SSE sequence on Vercel: first `data:` line was `type:"meta"` with `conversation_id` + `turn_id`, followed by multiple `type:"delta"` chunks, matching the documented stream shape. |
 
-### A1 sample behavior
+### A1 / A8 sample behavior
 The deployed API returned natural Chinese output when tested via Node fetch (PowerShell console display showed mojibake, but raw API content is correct UTF-8 text).
+
+SSE was also confirmed live on Vercel with streamed lines in this shape:
+- `data: {"type":"meta", ...}`
+- repeated `data: {"type":"delta","text":"..."}`
+- stream contract matches the QA handoff for A8–A9
 
 ---
 
@@ -80,7 +87,7 @@ Safe to forward as:
 - web smoke passed
 - copy / tone passed
 - ethics / disclaimer / safety consistency passed
-- P0 API contract and failure handling passed
+- P0 API contract, failure handling, and SSE stream shape passed
 
 ## Watchpoint
 

@@ -6,7 +6,7 @@
 
 ### QA result (Lumen)
 
-- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（含 W/C/E/S/A 全表）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
+- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（**A1–A9**，含 Vercel 上 SSE **A8/A9**）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
 
 ### Project path & URLs (for this QA pass)
 
