@@ -1,7 +1,7 @@
 # QA result — 安语 AnYu 中文官网 + P0 对话 API（Lumen）
 
-**Date:** 2026-04-27 00:57 Australia/Sydney  
-**Scope:** W1–W5, C1–C3, E1–S2, A1–A9  
+**Date:** 2026-04-27 01:05 Australia/Sydney  
+**Scope:** W1–W5, C1–C3, E1–S2, A1–A12  
 **Base URL:** `https://anyu-cn-website.vercel.app`
 
 ## Overall
@@ -68,14 +68,23 @@ Small watchpoint only: **W5 mobile layout was verified by implementation inspect
 | A7 | PASS | No `OPENAI_API_KEY` or `sk-` token found in built client assets under `.next/static`; API response headers/body did not expose auth material. |
 | A8 | PASS | Vercel deploy now responds to `Accept: text/event-stream` + `"stream": true` with HTTP `200` and `Content-Type: text/event-stream; charset=utf-8`. |
 | A9 | PASS | Observed normalized SSE sequence on Vercel: first `data:` line was `type:"meta"` with `conversation_id` + `turn_id`, followed by multiple `type:"delta"` chunks, matching the documented stream shape. |
+| A10 | PASS | `POST /api/elder-chat/session` with `{}` returned HTTP `200`, UUID `session_id`, and `meta.persistence: "none"`. |
+| A11 | PASS | `POST /api/risk/evaluate` with safe text returned `level: "L0"`, empty `signals`, and `version: "risk-v0"`. |
+| A12 | PASS | `POST /api/risk/evaluate` with exact L4 phrase `我想死` returned `level: "L4"` and `signals: ["self_harm_imminent"]`. Important distinction: `活着没意思` correctly returns `L3`, matching the implementation rules. |
 
-### A1 / A8 sample behavior
+### A1 / A8 / A10–A12 sample behavior
 The deployed API returned natural Chinese output when tested via Node fetch (PowerShell console display showed mojibake, but raw API content is correct UTF-8 text).
 
 SSE was also confirmed live on Vercel with streamed lines in this shape:
 - `data: {"type":"meta", ...}`
 - repeated `data: {"type":"delta","text":"..."}`
 - stream contract matches the QA handoff for A8–A9
+
+New live API checks also confirmed:
+- session issuance works with no DB persistence (`persistence: "none"`)
+- risk evaluator returns `L0` for safe text
+- risk evaluator returns `L4` for the exact self-harm trigger `我想死`
+- `活着没意思` is currently an `L3` severe-distress rule, not `L4`
 
 ---
 
@@ -87,7 +96,7 @@ Safe to forward as:
 - web smoke passed
 - copy / tone passed
 - ethics / disclaimer / safety consistency passed
-- P0 API contract, failure handling, and SSE stream shape passed
+- P0 API contract, failure handling, SSE stream shape, session issuance, and standalone risk evaluation passed
 
 ## Watchpoint
 

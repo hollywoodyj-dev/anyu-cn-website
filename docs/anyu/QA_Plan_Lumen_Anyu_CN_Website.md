@@ -6,7 +6,7 @@
 
 ### QA result (Lumen)
 
-- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（**A1–A9**，含 Vercel 上 SSE **A8/A9**）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
+- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（**A1–A12**：含 session **A10**、risk **A11–A12**、Vercel SSE **A8–A9**）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
 
 ### Project path & URLs (for this QA pass)
 
@@ -82,7 +82,7 @@ Use the **Vercel URL** for sections **1–3** (browser). Use the **same origin**
 | A9 | SSE — shape | Read first `data:` lines | 首条为 `type:meta`（含 `conversation_id`、`turn_id`）；随后有 `type:delta`；末条为 `type:done`（或 `type:error`）. |
 | A10 | Session | `POST /api/elder-chat/session` body `{}` | HTTP `200`；`session_id` 为 UUID；`meta.persistence` 为 `none`（无 DB 时）. |
 | A11 | Risk L0 | `POST /api/risk/evaluate` `{"text":"今天天气不错"}` | `level`=`L0`，`signals` 为空数组，`version` 含 `risk-`. |
-| A12 | Risk L4 | `POST /api/risk/evaluate` `{"text":"我想死"}` | `level`=`L4`；`signals` 含 `self_harm_imminent`. |
+| A12 | Risk L4 | `POST /api/risk/evaluate` `{"text":"我想死"}`（**仅用 L4 短语**；勿用「活着没意思」断言 L4——实现为 **L3** `distress_severe`，与产品规则一致） | `level`=`L4`；`signals` 含 `self_harm_imminent`. |
 
 Optional (PowerShell example for Lumen):
 
