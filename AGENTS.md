@@ -23,7 +23,7 @@
 ## 代码布局
 
 - 页面：`app/cn/...`（见 Spec 目录结构）
-- 组件：`components/anyu/` — `HeroSection`, `TextBlock`, `EmotionList`, `CTAButton`, `SafetyNotice`, `SimpleSteps`
+- 组件：`components/anyu/` — `WarmConnectionHome`（首页）, `HeroSection`, `TextBlock`, `EmotionList`, `CTAButton`, `SafetyNotice`, `SimpleSteps`, `QuietCard`
 - 全局样式与 CSS 变量：`app/globals.css`（`--anyu-*`）
 
 ## 安全与风险文案

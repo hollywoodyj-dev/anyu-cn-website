@@ -22,7 +22,7 @@ export default async function DisclaimerPage({ searchParams }: PageProps) {
   const rawNext = Array.isArray(sp.next) ? sp.next[0] : sp.next;
   const nextHref = sanitizeDisclaimerNext(rawNext);
   return (
-    <div className="space-y-12">
+    <div className="mx-auto w-full max-w-3xl space-y-12">
       <header className="space-y-3">
         <h1 className="text-2xl font-medium text-[var(--anyu-ink)] md:text-3xl">免责声明</h1>
         <p className="text-[var(--anyu-ink-muted)]">请在使用前了解这些重要说明</p>

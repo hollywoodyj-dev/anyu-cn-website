@@ -2,7 +2,7 @@ import { TextBlock } from "@/components/anyu";
 
 export default function AboutPage() {
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-3xl space-y-8">
       <header>
         <h1 className="text-2xl font-medium text-[var(--anyu-ink)] md:text-3xl">
           关于我们

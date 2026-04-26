@@ -7,7 +7,7 @@ import { EmotionList, SafetyNotice, TextBlock } from "@/components/anyu";
  */
 export default function ForElderPage() {
   return (
-    <div className="space-y-16">
+    <div className="mx-auto w-full max-w-3xl space-y-16">
       <header>
         <h1 className="text-3xl font-normal leading-snug text-[var(--anyu-ink)] md:text-4xl">
           你可以慢慢说，不用想太多

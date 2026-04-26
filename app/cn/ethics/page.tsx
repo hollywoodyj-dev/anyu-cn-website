@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  */
 export default function EthicsPage() {
   return (
-    <div className="space-y-14">
+    <div className="mx-auto w-full max-w-3xl space-y-14">
       <header className="space-y-4 text-center">
         <h1 className="text-2xl font-medium text-[var(--anyu-ink)] md:text-3xl">我们的原则</h1>
         <p className="mx-auto max-w-xl text-[var(--anyu-ink-muted)]">

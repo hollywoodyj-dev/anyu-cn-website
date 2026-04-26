@@ -4,7 +4,7 @@ import { SafetyNotice, TextBlock } from "@/components/anyu";
 /* 安全与预警：须与 Risk Engine 分级、QA 与产品说明一致。 */
 export default function SafetyPage() {
   return (
-    <div className="space-y-12">
+    <div className="mx-auto w-full max-w-3xl space-y-12">
       <header>
         <h1 className="text-2xl font-medium text-[var(--anyu-ink)] md:text-3xl">
           当情况变严重时，我们会这样处理

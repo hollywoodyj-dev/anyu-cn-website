@@ -3,7 +3,7 @@ import { CTAButton, EmotionList, TextBlock } from "@/components/anyu";
 /* 给子女：不替代照护者；只帮助被听见。 */
 export default function ForFamilyPage() {
   return (
-    <div className="space-y-16">
+    <div className="mx-auto w-full max-w-3xl space-y-16">
       <header className="space-y-2">
         <h1 className="text-2xl font-medium text-[var(--anyu-ink)] md:text-3xl">
           为什么父母越来越不说话？
