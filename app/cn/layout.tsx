@@ -37,15 +37,16 @@ export default function CnLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 md:px-6">
           <Link
             href="/cn"
+            aria-label="安语首页"
             className="flex shrink-0 items-center gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--anyu-accent)]"
           >
             <Image
               src={ANYU_LOGO_MARK}
-              alt="安语"
-              width={44}
-              height={44}
-              className="h-11 w-11 shrink-0 rounded-full object-cover shadow-sm ring-2 ring-[#F0E5DA]/80"
-              sizes="44px"
+              alt=""
+              width={48}
+              height={48}
+              className="h-11 w-auto max-h-11 shrink-0 object-contain object-left"
+              sizes="(max-width: 768px) 48px, 56px"
               priority
             />
             <div className="leading-tight">

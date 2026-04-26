@@ -36,9 +36,13 @@ export function WarmConnectionHome() {
               为长者与家人设计的情感连接系统
             </div>
 
-            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-[#322A24] md:text-5xl lg:text-6xl">
-              让父母没说出口的话，
-              <span className="mt-2 block text-[#A86F4C]">被温柔听见。</span>
+            <h1 className="font-semibold leading-tight tracking-tight text-[#322A24]">
+              <span className="block text-[clamp(1.2rem,4.5vw,3.75rem)] whitespace-nowrap md:text-5xl lg:text-6xl">
+                让父母没说出口的话，
+              </span>
+              <span className="mt-2 block text-[clamp(1.2rem,4.8vw,3.75rem)] text-[#A86F4C] md:text-5xl lg:text-6xl">
+                被温柔听见。
+              </span>
             </h1>
 
             <p className="mt-7 max-w-xl text-lg leading-8 text-[#6D5F55] md:text-xl md:leading-9">

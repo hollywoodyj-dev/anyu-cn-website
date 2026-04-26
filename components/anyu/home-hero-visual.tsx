@@ -31,6 +31,8 @@ export function HomeHeroVisual() {
         hero = "/anyu/home/hero-lifestyle.jpg";
       } else if (await assetOk("/anyu/home/hero-lifestyle.webp")) {
         hero = "/anyu/home/hero-lifestyle.webp";
+      } else if (await assetOk("/anyu/home/hero-lifestyle.png")) {
+        hero = "/anyu/home/hero-lifestyle.png";
       }
       const [l, a] = await Promise.all([
         assetOk("/anyu/home/lamp.png"),
@@ -101,7 +103,7 @@ export function HomeHeroVisual() {
         )}
         <div className="mt-6 text-lg font-medium text-[#4B4038]">安语灯</div>
         <p className="mt-2 max-w-[11rem] px-4 text-center text-sm leading-6 text-[#85766C]">
-          “我今天有点想孩子。”
+          “我今天有点想孩子了。”
         </p>
         <div className="mt-5 h-14 w-14 rounded-full border-4 border-white bg-[#F5D7BE] shadow-inner md:mt-7 md:h-16 md:w-16" aria-hidden />
       </div>
