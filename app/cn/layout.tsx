@@ -43,10 +43,10 @@ export default function CnLayout({ children }: { children: React.ReactNode }) {
             <Image
               src={ANYU_LOGO_MARK}
               alt=""
-              width={80}
-              height={80}
-              className="h-14 w-auto max-h-14 shrink-0 object-contain object-left md:h-16 md:max-h-16"
-              sizes="(max-width: 768px) 56px, 64px"
+              width={100}
+              height={100}
+              className="h-16 w-auto max-h-16 shrink-0 object-contain object-left md:h-20 md:max-h-20"
+              sizes="(max-width: 768px) 64px, 80px"
               priority
             />
             <div className="leading-tight">
