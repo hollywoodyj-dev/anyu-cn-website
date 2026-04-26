@@ -4,6 +4,7 @@
 
 - 在 `c:\github\anyu-cn-website` 初始化独立 Next 15 工作区；实现 Spec V1 路由与锁账文案、基础 `anyu` 组件与 `AGENTS.md`。
 - 官网目标（注释与 AGENTS）：非「推广 AI」；让子女理解父母少言原因与如何帮助表达；让长者不惧怕使用。伦理：Non-Substitution，关系在人与人之间。
+- 产品规格存档：`docs/anyu/子女端体验系统.md`（子女端 `/family/*`、Dashboard / 通知 / 趋势、API）；全产品能力，**不在**本营销站仓库实现路由。
 
 ## 待与产品确认
 
