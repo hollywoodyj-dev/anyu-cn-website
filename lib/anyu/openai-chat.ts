@@ -117,3 +117,157 @@ export async function runElderChatTurn(input: ElderChatTurnInput): Promise<Elder
 export function safeAssistantFallback(): string {
   return "我现在有点接不上，请你稍后再试，或先和身边的人说一声。";
 }
+
+export type ElderChatSseMeta = {
+  conversation_id: string;
+  lang: string;
+};
+
+function sseLine(obj: unknown): string {
+  return `data: ${JSON.stringify(obj)}\n\n`;
+}
+
+/**
+ * OpenAI Chat Completions `stream: true` → 安语规范化 SSE（仅 LLM token；STT 仍在桥接侧）。
+ * 事件：`meta` → 若干 `delta`（`text` 片段）→ `done`；错误为 `error`。
+ */
+export async function createElderChatMessageSseStream(
+  input: ElderChatTurnInput,
+  meta: ElderChatSseMeta,
+): Promise<ReadableStream<Uint8Array>> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured");
+  }
+
+  const model = (input.modelOverride ?? process.env.ANYU_OPENAI_CHAT_MODEL ?? "gpt-5.4").trim();
+  const systemPrompt = getSystemPrompt();
+  const promptVersion = getPromptVersion();
+
+  logTurn(input.turnId, "stream_request_start", { model, prompt_version: promptVersion });
+
+  const res = await fetch(OPENAI_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: input.userMessage },
+      ],
+      temperature: 0.7,
+      stream: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const raw = await res.text();
+    let msg = res.statusText;
+    try {
+      const j = raw ? (JSON.parse(raw) as OpenAIErrorBody) : {};
+      msg = j.error?.message ?? msg;
+    } catch {
+      /* keep statusText */
+    }
+    logTurn(input.turnId, "stream_openai_error", { status: res.status });
+    throw new OpenAIChatUpstreamError(msg, res.status);
+  }
+
+  if (!res.body) {
+    throw new OpenAIChatUpstreamError("Empty stream body", res.status);
+  }
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const reader = res.body.getReader();
+
+  function processSseLine(controller: ReadableStreamDefaultController<Uint8Array>, trimmed: string) {
+    if (!trimmed.startsWith("data:")) return "continue" as const;
+    const payload = trimmed.slice(5).trim();
+    if (payload === "[DONE]") {
+      controller.enqueue(encoder.encode(sseLine({ type: "done" })));
+      return "done" as const;
+    }
+    try {
+      const json = JSON.parse(payload) as {
+        error?: { message?: string };
+        choices?: Array<{ delta?: { content?: string | null } }>;
+      };
+      if (json.error?.message) {
+        controller.enqueue(
+          encoder.encode(sseLine({ type: "error", message: json.error.message })),
+        );
+        return "done" as const;
+      }
+      const piece = json.choices?.[0]?.delta?.content;
+      if (typeof piece === "string" && piece.length > 0) {
+        controller.enqueue(encoder.encode(sseLine({ type: "delta", text: piece })));
+      }
+    } catch {
+      /* ignore non-JSON lines */
+    }
+    return "continue" as const;
+  }
+
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      void (async () => {
+        try {
+          controller.enqueue(
+            encoder.encode(
+              sseLine({
+                type: "meta",
+                conversation_id: meta.conversation_id,
+                turn_id: input.turnId,
+                model,
+                prompt_version: promptVersion,
+                timestamp: new Date().toISOString(),
+                lang: meta.lang,
+              }),
+            ),
+          );
+
+          let buffer = "";
+          let streamEnded = false;
+
+          while (!streamEnded) {
+            const { done, value } = await reader.read();
+            if (value) {
+              buffer += decoder.decode(value, { stream: !done });
+            }
+            let newlineIdx: number;
+            while (!streamEnded && (newlineIdx = buffer.indexOf("\n")) >= 0) {
+              const line = buffer.slice(0, newlineIdx);
+              buffer = buffer.slice(newlineIdx + 1);
+              if (processSseLine(controller, line.trim()) === "done") {
+                streamEnded = true;
+              }
+            }
+            if (done && !streamEnded) {
+              const tail = buffer.trim();
+              if (tail && processSseLine(controller, tail) === "done") {
+                streamEnded = true;
+              } else if (!tail) {
+                controller.enqueue(encoder.encode(sseLine({ type: "done" })));
+                streamEnded = true;
+              } else {
+                controller.enqueue(encoder.encode(sseLine({ type: "done" })));
+                streamEnded = true;
+              }
+            }
+          }
+
+          logTurn(input.turnId, "stream_request_ok", { model, prompt_version: promptVersion });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "stream failed";
+          controller.enqueue(encoder.encode(sseLine({ type: "error", message: msg })));
+        } finally {
+          controller.close();
+        }
+      })();
+    },
+  });
+}

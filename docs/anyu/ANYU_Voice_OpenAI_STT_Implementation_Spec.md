@@ -132,6 +132,8 @@ Success — **JSON (simplest first):**
 
 **Streaming variant:** same URL with e.g. `Accept: text/event-stream` or body flag `"stream": true` — return SSE/NDJSON for **LLM tokens only**; STT remains utterance-complete upstream.
 
+**Implemented (this repo):** `Content-Type: text/event-stream; charset=utf-8`. Each SSE `data:` line is JSON: `{"type":"meta",...}`（含 `conversation_id`、`turn_id`、`model` 等）→ 若干 `{"type":"delta","text":"..."}` → `{"type":"done"}`；流建立前失败仍返回 **JSON** `502`/`503`（与 JSON 模式一致）。
+
 Errors: `400` invalid body; `401` auth; `404` unknown `session_id`; `502` upstream with safe `assistant_message` fallback where appropriate.
 
 ---
@@ -217,8 +219,8 @@ Internal helper when audio is supported:
 ## 9. Implementation checklist
 
 1. `app/api/elder-chat/message/route.ts` — text in, OpenAI out, env model, errors.
-2. Vercel env + `curl` smoke test.
-3. Optional: SSE streaming on same route for LLM.
+2. Vercel env + smoke test（README：JSON + UTF-8 说明）.
+3. SSE streaming on same route（`Accept: text/event-stream` 或 `"stream": true`）— **已接**；事件：`meta` / `delta` / `done`.
 4. `app/api/elder-chat/session/route.ts` + Prisma when conversations persist.
 5. `app/api/risk/evaluate/route.ts` stub + `lib/anyu/risk/*`.
 6. `app/api/consent/*` when legal/consent schema is ready.

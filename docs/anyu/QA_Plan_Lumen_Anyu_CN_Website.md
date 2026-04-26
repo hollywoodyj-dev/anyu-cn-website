@@ -78,6 +78,8 @@ Use the **Vercel URL** for sections **1–3** (browser). Use the **same origin**
 | A5 | No key | Remove `OPENAI_API_KEY`, restart, call API | HTTP `503` (or agreed code); **no** stack trace or key in response body. |
 | A6 | Upstream failure | Simulate bad model name or revoked key | HTTP `502` (per current handler); `assistant_message` is **short fallback**，不假装成功诊断. |
 | A7 | Secret leak | Browser devtools → Network → response headers/body | **Never** `OPENAI_API_KEY` or raw Authorization in client-visible assets for this route (server-only). |
+| A8 | SSE — trigger | `POST` with header `Accept: text/event-stream` **或** body `"stream":true` | HTTP `200`; `Content-Type` 含 `text/event-stream`; body 为 SSE 行（非整段 JSON）. |
+| A9 | SSE — shape | Read first `data:` lines | 首条为 `type:meta`（含 `conversation_id`、`turn_id`）；随后有 `type:delta`；末条为 `type:done`（或 `type:error`）. |
 
 Optional (PowerShell example for Lumen):
 
@@ -87,13 +89,22 @@ Invoke-RestMethod -Method POST -Uri "https://anyu-cn-website.vercel.app/api/elde
   -Body '{"message":"我今天有点想孩子","lang":"zh"}'
 ```
 
+控制台若中文乱码，以 **原始 UTF-8 响应** 为准（见 QA Result 备注）；或 `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()` 后再试。
+
+**SSE smoke（`curl.exe`，Windows 自带）：**
+
+```powershell
+curl.exe -sN -H "Accept: text/event-stream" -H "Content-Type: application/json" `
+  -d "{\"message\":\"你好\",\"lang\":\"zh\"}" `
+  "https://anyu-cn-website.vercel.app/api/elder-chat/message"
+```
+
 ---
 
 ## 5. Out of scope for this pass (record as N/A or future)
 
 - Full **Risk Engine** integration inside `message` (P1 stub `/api/risk/evaluate` not required for this checklist unless shipped).
 - **Consent** persistence APIs (`GET/PATCH/POST revoke`) — until Prisma/schema exists.
-- **Streaming** LLM response on same route (optional future).
 - **Audio / STT** on Vercel — bridge text-in path only for P0.
 - **子女端 dashboard** / notifications / charts.
 

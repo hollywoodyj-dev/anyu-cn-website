@@ -27,11 +27,22 @@ npm run dev
 - Next.js 15、React 19、Tailwind CSS 4
 - 页面均在 `app/cn/…`
 
-## 长者对话 API（P0）
+## 长者对话 API（P0 + SSE）
 
-见 `docs/anyu/ANYU_Voice_OpenAI_STT_Implementation_Spec.md`。环境变量示例：`.env.example`（复制为 `.env.local` 并填入 `OPENAI_API_KEY`）。
+规格：`docs/anyu/ANYU_Voice_OpenAI_STT_Implementation_Spec.md`。变量模板：`.env.example` → 复制为 **`.env.local`**（本地）或填到 **Vercel → Project → Settings → Environment Variables**。
 
-本地 smoke（需已配置密钥；PowerShell）：
+### 环境变量（Step 3）
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `OPENAI_API_KEY` | **是**（要跑 API 时） | 仅服务端；**不要** `NEXT_PUBLIC_` 前缀。 |
+| `ANYU_OPENAI_CHAT_MODEL` | 否 | 默认 `gpt-5.4`；可改为组织批准的模型或快照 ID。 |
+| `ANYU_SYSTEM_PROMPT` | 否 | 整段覆盖默认 system prompt。 |
+| `ANYU_PROMPT_VERSION` | 否 | 默认 `v0`；与 prompt 变更一起 bump。 |
+
+在 Vercel 修改变量后需 **Redeploy**，预览环境若也要测 API，请在 **Preview** 环境同样配置密钥（或仅 Production 测）。
+
+### JSON smoke（本地；PowerShell）
 
 ```powershell
 Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/elder-chat/message" `
@@ -39,7 +50,22 @@ Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/elder-chat/messag
   -Body '{"message":"我今天有点想孩子","lang":"zh"}'
 ```
 
-成功时返回 `assistant_message`、`conversation_id`、`meta`（含 `model`、`prompt_version`、`turn_id`）。上游失败时 HTTP `502`，仍带简短兜底的 `assistant_message`。
+成功：`assistant_message`、`conversation_id`、`meta`（`model`、`prompt_version`、`turn_id` 等）。上游失败：**502** + 简短兜底句。缺密钥：**503**。
+
+若控制台中文乱码，以 **原始 UTF-8** 为准，或先执行  
+`[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()`。
+
+### SSE 流式（Step 4）
+
+同一 URL：`Accept: text/event-stream` **或** JSON 里 `"stream": true`。响应为 **`text/event-stream`**，每行 `data: {JSON}`：`type:meta` → 若干 `type:delta`（`text` 片段）→ `type:done`。流未建立前的错误仍返回 **JSON**（502/503）。
+
+Windows 推荐用 **`curl.exe`**（跟 `-N` 不缓冲）：
+
+```powershell
+curl.exe -sN -H "Accept: text/event-stream" -H "Content-Type: application/json" `
+  -d "{\"message\":\"你好\",\"lang\":\"zh\"}" `
+  "http://localhost:3000/api/elder-chat/message"
+```
 
 ## 部署到 Vercel（新建项目并连 GitHub）
 
