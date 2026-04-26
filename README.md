@@ -80,6 +80,11 @@ Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/risk/evaluate" `
   -ContentType "application/json" -Body '{"text":"我想死"}'
 ```
 
+### Risk gate + Consent stubs（Step 7–8）
+
+- **`POST /api/elder-chat/message`** 会先跑 **`evaluateRiskText`**。**L3 / L4** 时 **不调 OpenAI**，返回固定安全引导（`meta.model`=`risk_gate`，`meta.chat_invoked`=`false`，`meta.risk` 为分级结果）。L0–L2 再走 LLM；成功时 `meta.chat_invoked`=`true` 且带 `meta.risk`。SSE 在拦截时仍为 `text/event-stream`（`meta` + 单条 `delta` 全文 + `done`）。**L3/L4 测试可无 `OPENAI_API_KEY`**。
+- **Consent：** `GET` / `PATCH` **`/api/consent`**、`POST` **`/api/consent/revoke`** — 无 Prisma 时统一 **HTTP `501`**，body 含 `code: NOT_IMPLEMENTED`（见 `docs/anyu/Implementation Spec.md` §8）。
+
 ## 部署到 Vercel（新建项目并连 GitHub）
 
 仓库：<https://github.com/hollywoodyj-dev/anyu-cn-website>。在 Cursor 里无法替你完成网页登录，请在本机浏览器按下面做一遍即可。

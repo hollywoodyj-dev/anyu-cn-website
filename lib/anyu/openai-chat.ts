@@ -121,6 +121,8 @@ export function safeAssistantFallback(): string {
 export type ElderChatSseMeta = {
   conversation_id: string;
   lang: string;
+  /** 本条 user 句已跑的 risk（供桥接 / TTS；与 Human Override 叙事一致） */
+  risk?: { level: string; signals: string[]; version: string };
 };
 
 function sseLine(obj: unknown): string {
@@ -226,6 +228,7 @@ export async function createElderChatMessageSseStream(
                 prompt_version: promptVersion,
                 timestamp: new Date().toISOString(),
                 lang: meta.lang,
+                ...(meta.risk ? { risk: meta.risk } : {}),
               }),
             ),
           );
@@ -268,6 +271,44 @@ export async function createElderChatMessageSseStream(
           controller.close();
         }
       })();
+    },
+  });
+}
+
+export type StaticAssistantSseInput = {
+  turnId: string;
+  conversation_id: string;
+  lang: string;
+  /** 写入 meta.model，表示未调用 LLM */
+  modelLabel: string;
+  prompt_version: string;
+  assistantText: string;
+  risk: { level: string; signals: string[]; version: string };
+};
+
+/** L3/L4 风险门：不连 OpenAI，仍返回与 LLM 流相同形态的 SSE（单条 delta 含全文）。 */
+export function createStaticAssistantSseStream(input: StaticAssistantSseInput): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          sseLine({
+            type: "meta",
+            conversation_id: input.conversation_id,
+            turn_id: input.turnId,
+            model: input.modelLabel,
+            prompt_version: input.prompt_version,
+            timestamp: new Date().toISOString(),
+            lang: input.lang,
+            risk: input.risk,
+            chat_invoked: false,
+          }),
+        ),
+      );
+      controller.enqueue(encoder.encode(sseLine({ type: "delta", text: input.assistantText })));
+      controller.enqueue(encoder.encode(sseLine({ type: "done" })));
+      controller.close();
     },
   });
 }

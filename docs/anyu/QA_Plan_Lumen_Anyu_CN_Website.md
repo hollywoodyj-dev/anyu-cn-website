@@ -6,7 +6,7 @@
 
 ### QA result (Lumen)
 
-- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（**A1–A12**：含 session **A10**、risk **A11–A12**、Vercel SSE **A8–A9**）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
+- **2026-04-27:** `docs/anyu/QA_Result_Lumen_Anyu_CN_Website_2026-04-27.md` — **overall PASS**（**A1–A12** 为 Lumen 已签；**A13–A17** 为 Step 7–8 新增项，待复测后并入 Result 文件）。PowerShell 控制台偶发乱码时以 **原始 UTF-8 响应** 为准。
 
 ### Project path & URLs (for this QA pass)
 
@@ -83,6 +83,11 @@ Use the **Vercel URL** for sections **1–3** (browser). Use the **same origin**
 | A10 | Session | `POST /api/elder-chat/session` body `{}` | HTTP `200`；`session_id` 为 UUID；`meta.persistence` 为 `none`（无 DB 时）. |
 | A11 | Risk L0 | `POST /api/risk/evaluate` `{"text":"今天天气不错"}` | `level`=`L0`，`signals` 为空数组，`version` 含 `risk-`. |
 | A12 | Risk L4 | `POST /api/risk/evaluate` `{"text":"我想死"}`（**仅用 L4 短语**；勿用「活着没意思」断言 L4——实现为 **L3** `distress_severe`，与产品规则一致） | `level`=`L4`；`signals` 含 `self_harm_imminent`. |
+| A13 | Risk gate JSON | `POST .../message` body `{"message":"我想死"}`（非 SSE） | HTTP `200`；`meta.model`=`risk_gate`，`meta.chat_invoked`=`false`，`meta.risk.level`=`L4`；`assistant_message` 为安全引导短文（**不调 OpenAI**，可无 `OPENAI_API_KEY`）. |
+| A14 | Risk gate SSE | 同上句 + `Accept: text/event-stream` | HTTP `200`；SSE `meta` 含 `risk`；`delta` 含引导全文；`done`. |
+| A15 | Consent GET | `GET /api/consent` | HTTP `501`；JSON `code`=`NOT_IMPLEMENTED`. |
+| A16 | Consent PATCH | `PATCH /api/consent` + `Content-Type: application/json` body `{}` | HTTP `501`；同上. |
+| A17 | Consent revoke | `POST /api/consent/revoke` | HTTP `501`；同上. |
 
 Optional (PowerShell example for Lumen):
 
@@ -106,7 +111,7 @@ curl.exe -sN -H "Accept: text/event-stream" -H "Content-Type: application/json" 
 
 ## 5. Out of scope for this pass (record as N/A or future)
 
-- **`message` 内先跑 risk 再分支**（L3/L4 阻断普通回复）：`/api/risk/evaluate` 已可独立调用；接入 `message` 为下一步。
+- **Consent 持久化**（Prisma `ConsentSetting` 等）与 **middleware 真门禁** — 仍为后续；当前 `501` 仅为契约占位。
 - **Consent** persistence APIs (`GET/PATCH/POST revoke`) — until Prisma/schema exists.
 - **Audio / STT** on Vercel — bridge text-in path only for P0.
 - **子女端 dashboard** / notifications / charts.
@@ -119,7 +124,7 @@ curl.exe -sN -H "Accept: text/event-stream" -H "Content-Type: application/json" 
 |------|--------|------|---------------|-------|
 | Web smoke W1–W5 | Lumen | | | |
 | Consistency E1–S2 | Lumen | | | |
-| API A1–A12 | Lumen | | | |
+| API A1–A17 | Lumen | | | |
 | Product | Chino / Holly | | | |
 
 ---

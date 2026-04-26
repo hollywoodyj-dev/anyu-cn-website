@@ -218,12 +218,12 @@ Internal helper when audio is supported:
 
 ## 9. Implementation checklist
 
-1. `app/api/elder-chat/message/route.ts` — text in, OpenAI out, env model, errors.
+1. `app/api/elder-chat/message/route.ts` — text in, **risk 先判**（L3/L4 不调 LLM），OpenAI out, env model, errors, SSE。
 2. Vercel env + smoke test（README：JSON + UTF-8 说明）.
 3. SSE streaming on same route（`Accept: text/event-stream` 或 `"stream": true`）— **已接**；事件：`meta` / `delta` / `done`.
 4. `app/api/elder-chat/session/route.ts` — **已接**（无 DB 时仅签发 UUID；Prisma 持久化后续再接）.
-5. `app/api/risk/evaluate/route.ts` + `lib/anyu/risk/evaluate.ts` — **已接**（硬编码规则 v0；与 `message` 串联为下一步）.
-6. `app/api/consent/*` when legal/consent schema is ready.
+5. `app/api/risk/evaluate/route.ts` + `lib/anyu/risk/evaluate.ts` + **`message` 内串联** — **已接**（`lib/anyu/risk/blocked-reply.ts`）.
+6. `app/api/consent/*` — **GET/PATCH `/api/consent`、`POST /api/consent/revoke` 已接**（无 DB 时 **501** `NOT_IMPLEMENTED`）；Prisma + 真门禁后续再接。
 7. Audio + `transcribeUtterance` only after (1) is stable.
 
 ---
@@ -240,6 +240,7 @@ lib/anyu/openai-chat.ts
 lib/anyu/prompts.ts
 lib/anyu/stt.ts
 lib/anyu/risk/evaluate.ts
+lib/anyu/risk/blocked-reply.ts
 ```
 
 ---
