@@ -93,7 +93,10 @@ Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/risk/evaluate" `
 
 见 **`docs/anyu/CN_homepage_assets.md`**。将 **`hero-lifestyle.jpg`** 放到 **`public/anyu/home/`** 后，首页 Hero 右侧会显示**整幅主视觉**（与单张大图稿一致）；另可选 **`lamp.png`**、**`child-app.png`** 在无整图时增强灯位与手机框。
 - **`lib/anyu/stt.ts`** — `transcribeUtterance(bytes, mime, { language? })`；`ANYU_STT_PROVIDER` 默认 **`bridge`**（不在本机转写，由桥接把**纯文本**发到 **`message`**）。
-- **`POST /api/elder-chat/transcribe`** — `multipart/form-data`，字段 **`audio`** 或 **`file`**；可选 **`lang`**（如 `zh`）。将 `ANYU_STT_PROVIDER=openai_whisper` 且配置 **`OPENAI_API_KEY`** 后，走 OpenAI **`/v1/audio/transcriptions`**（`ANYU_OPENAI_TRANSCRIBE_MODEL` 默认 `whisper-1`）。`bridge` / `off` 时 **501** + `code: STT_USE_TEXT_BRIDGE`。
+- **`POST /api/elder-chat/transcribe`** — `multipart/form-data`，字段 **`audio`** 或 **`file`**；可选 **`lang`**（如 `zh`）。
+  - `ANYU_STT_PROVIDER=openai_whisper` + **`OPENAI_API_KEY`**：走 OpenAI **`/v1/audio/transcriptions`**（`ANYU_OPENAI_TRANSCRIBE_MODEL` 默认 `whisper-1`）。
+  - `ANYU_STT_PROVIDER=bridge` + **`ANYU_BRIDGE_STT_URL`**：服务端转发到外部 STT（可附 `ANYU_BRIDGE_STT_TOKEN` / `ANYU_BRIDGE_STT_TOKEN_HEADER`），返回 `text`。
+  - `ANYU_STT_PROVIDER=off`：返回 **501** + `code: STT_USE_TEXT_BRIDGE`。
 - 与 **`message`** 相同：不在生产日志落全文音频/转写调试串（Spec §5 / §8）。
 
 ### 免责确认 + middleware（Step 10）

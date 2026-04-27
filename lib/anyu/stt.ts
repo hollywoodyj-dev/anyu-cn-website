@@ -9,6 +9,8 @@ export type SttProviderId = "bridge" | "openai_whisper" | "off";
 
 export type TranscribeUtteranceResult = {
   text: string;
+  provider: "openai_whisper" | "bridge";
+  model?: string;
   language?: string;
   /** OpenAI verbose_json 的 duration 秒；非 verbose 时可能缺省 */
   durationSeconds?: number;
@@ -42,6 +44,15 @@ export class SttUpstreamError extends Error {
   }
 }
 
+export class SttBridgeConfigError extends Error {
+  readonly code = "STT_BRIDGE_NOT_CONFIGURED" as const;
+
+  constructor() {
+    super("Bridge STT is not configured. Set ANYU_BRIDGE_STT_URL.");
+    this.name = "SttBridgeConfigError";
+  }
+}
+
 export function getAnyuSttProvider(): SttProviderId {
   const raw = (process.env.ANYU_STT_PROVIDER ?? "bridge").trim().toLowerCase();
   if (raw === "openai_whisper" || raw === "whisper") return "openai_whisper";
@@ -60,6 +71,108 @@ function extensionFromMime(mime: string): string {
   return "audio";
 }
 
+function parseBridgeText(json: unknown): string {
+  if (!json || typeof json !== "object") return "";
+  const j = json as {
+    text?: unknown;
+    transcript?: unknown;
+    result?: unknown;
+    data?: { text?: unknown; transcript?: unknown };
+  };
+  if (typeof j.text === "string") return j.text.trim();
+  if (typeof j.transcript === "string") return j.transcript.trim();
+  if (typeof j.result === "string") return j.result.trim();
+  if (typeof j.data?.text === "string") return j.data.text.trim();
+  if (typeof j.data?.transcript === "string") return j.data.transcript.trim();
+  return "";
+}
+
+async function transcribeViaBridge(
+  bytes: Uint8Array,
+  mime: string,
+  opts?: { language?: string },
+): Promise<TranscribeUtteranceResult> {
+  const bridgeUrl = process.env.ANYU_BRIDGE_STT_URL?.trim();
+  if (!bridgeUrl) {
+    throw new SttBridgeConfigError();
+  }
+
+  const timeoutMsRaw = Number(process.env.ANYU_BRIDGE_STT_TIMEOUT_MS ?? "20000");
+  const timeoutMs = Number.isFinite(timeoutMsRaw) && timeoutMsRaw > 1000 ? timeoutMsRaw : 20000;
+  const ext = extensionFromMime(mime);
+  const form = new FormData();
+  const payload = Uint8Array.from(bytes);
+  const blobType = mime.split(";")[0]?.trim() || "application/octet-stream";
+  form.append("file", new Blob([payload], { type: blobType }), `utterance.${ext}`);
+  form.append("audio", new Blob([payload], { type: blobType }), `utterance.${ext}`);
+
+  const lang = opts?.language?.trim();
+  if (lang && lang.length >= 2) {
+    const short = lang.slice(0, 2);
+    form.append("language", short);
+    form.append("lang", short);
+  }
+
+  const token = process.env.ANYU_BRIDGE_STT_TOKEN?.trim();
+  const tokenHeaderName =
+    (process.env.ANYU_BRIDGE_STT_TOKEN_HEADER ?? "Authorization").trim() || "Authorization";
+  const headers: HeadersInit = {};
+  if (token) {
+    headers[tokenHeaderName] =
+      tokenHeaderName.toLowerCase() === "authorization" ? `Bearer ${token}` : token;
+  }
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(bridgeUrl, {
+      method: "POST",
+      headers,
+      body: form,
+      signal: ctrl.signal,
+    });
+    const raw = await res.text();
+    if (!res.ok) {
+      let msg = res.statusText;
+      try {
+        const j = raw ? (JSON.parse(raw) as { error?: string; message?: string }) : {};
+        msg = j.error || j.message || msg;
+      } catch {
+        /* keep status text */
+      }
+      throw new SttUpstreamError(msg || "Bridge STT failed", res.status);
+    }
+
+    let json: unknown;
+    try {
+      json = raw ? JSON.parse(raw) : {};
+    } catch {
+      throw new SttUpstreamError("Invalid JSON from bridge STT", res.status);
+    }
+    const text = parseBridgeText(json);
+    if (!text) {
+      throw new SttUpstreamError("Empty transcription text from bridge STT", res.status);
+    }
+    const j = (json ?? {}) as { language?: unknown; model?: unknown; duration?: unknown };
+    return {
+      text,
+      provider: "bridge",
+      model: typeof j.model === "string" ? j.model : undefined,
+      language: typeof j.language === "string" ? j.language : undefined,
+      durationSeconds: typeof j.duration === "number" ? j.duration : undefined,
+    };
+  } catch (e) {
+    if (e instanceof SttUpstreamError) throw e;
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new SttUpstreamError("Bridge STT timeout", 504);
+    }
+    const msg = e instanceof Error ? e.message : "Bridge STT failed";
+    throw new SttUpstreamError(msg, 502);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * @param bytes 完整 utterance 二进制（WAV / WebM 等）
  * @param mime Content-Type（可带 charset 等后缀，仅取主类型推断文件名）
@@ -71,8 +184,13 @@ export async function transcribeUtterance(
   opts?: { language?: string },
 ): Promise<TranscribeUtteranceResult> {
   const provider = getAnyuSttProvider();
-  if (provider === "bridge" || provider === "off") {
+  if (provider === "off") {
     throw new SttNotOnServerError();
+  }
+  const src = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const u8 = Uint8Array.from(src);
+  if (provider === "bridge") {
+    return transcribeViaBridge(u8, mime, opts);
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -81,8 +199,6 @@ export async function transcribeUtterance(
   }
 
   const model = (process.env.ANYU_OPENAI_TRANSCRIBE_MODEL ?? "whisper-1").trim();
-  const src = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  const u8 = Uint8Array.from(src);
   const ext = extensionFromMime(mime);
   const form = new FormData();
   form.append("model", model);
@@ -132,6 +248,8 @@ export async function transcribeUtterance(
 
   return {
     text,
+    provider: "openai_whisper",
+    model,
     language: typeof json.language === "string" ? json.language : undefined,
     durationSeconds: typeof json.duration === "number" ? json.duration : undefined,
   };

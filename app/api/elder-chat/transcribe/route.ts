@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  SttBridgeConfigError,
   SttMissingApiKeyError,
   SttNotOnServerError,
   SttUpstreamError,
@@ -13,7 +14,9 @@ const MAX_BYTES = 24 * 1024 * 1024;
 /**
  * POST /api/elder-chat/transcribe — Spec §6（utterance-complete STT）
  * multipart：`audio` 或 `file`（二选一）；可选 `lang`（如 zh）。
- * 需 `ANYU_STT_PROVIDER=openai_whisper` 且配置 `OPENAI_API_KEY`。
+ * 支持：
+ * - `ANYU_STT_PROVIDER=openai_whisper` + `OPENAI_API_KEY`
+ * - `ANYU_STT_PROVIDER=bridge` + `ANYU_BRIDGE_STT_URL`
  */
 export async function POST(req: NextRequest) {
   const ct = req.headers.get("content-type") ?? "";
@@ -52,12 +55,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const out = await transcribeUtterance(buf, mime, { language });
-    const model = (process.env.ANYU_OPENAI_TRANSCRIBE_MODEL ?? "whisper-1").trim();
     return NextResponse.json({
       text: out.text,
       meta: {
-        provider: "openai_whisper",
-        model,
+        provider: out.provider,
+        ...(out.model ? { model: out.model } : {}),
         ...(out.language ? { language: out.language } : {}),
         ...(typeof out.durationSeconds === "number"
           ? { duration_seconds: out.durationSeconds }
@@ -72,6 +74,12 @@ export async function POST(req: NextRequest) {
       );
     }
     if (err instanceof SttMissingApiKeyError) {
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status: 503 },
+      );
+    }
+    if (err instanceof SttBridgeConfigError) {
       return NextResponse.json(
         { error: err.message, code: err.code },
         { status: 503 },
