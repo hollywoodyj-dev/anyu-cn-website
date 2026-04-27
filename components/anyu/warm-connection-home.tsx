@@ -9,6 +9,7 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
+  Star,
   Users,
 } from "lucide-react";
 import { HomeHeroVisual } from "./home-hero-visual";
@@ -37,35 +38,56 @@ export function WarmConnectionHome() {
               为长者与家人设计的情感连接系统
             </div>
 
-            <h1 className="font-semibold leading-tight tracking-tight text-[#322A24]">
-              <span className="block text-[clamp(1.2rem,4.5vw,3.75rem)] whitespace-nowrap md:text-5xl lg:text-6xl">
+            <h1 className="font-bold leading-tight tracking-tight text-[#2D2D2D]">
+              <span className="block text-[clamp(1.2rem,4.5vw,3.5rem)] whitespace-nowrap md:text-5xl">
                 让父母没说出口的话，
               </span>
-              <span className="mt-2 block text-[clamp(1.2rem,4.8vw,3.75rem)] text-[#A86F4C] md:text-5xl lg:text-6xl">
+              <span className="mt-2 block text-[clamp(1.2rem,4.8vw,3.5rem)] text-[#A86F4C] md:text-5xl">
                 被温柔听见。
               </span>
             </h1>
 
-            <p className="mt-7 max-w-xl text-lg leading-8 text-[#6D5F55] md:text-xl md:leading-9">
-              安语不是来替代家人的。它只是帮助长者把心里的话慢慢说出来，也让子女更早听见那些没有说出口的需要。
+            <p className="mt-7 max-w-md leading-relaxed text-[#8B7E74]">
+              安语，连接长者与家人的情感沟通系统。
+              <br />
+              帮助他们表达，也帮助你更早靠近。
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-2 text-sm text-[#8B7B70]">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-3 py-1">
-                许多家庭正在慢慢用安语，把不好说的话说清楚一点。
-              </span>
+            <div className="mt-6 flex items-center gap-3 pt-2 text-sm text-[#8B7E74]">
+              <div className="flex -space-x-2" aria-hidden>
+                {[
+                  { bg: "bg-[#EADCCF]", text: "刘" },
+                  { bg: "bg-[#DCE9E4]", text: "吴" },
+                  { bg: "bg-[#EEE4D8]", text: "周" },
+                ].map((a) => (
+                  <span
+                    key={a.text}
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white ${a.bg} text-xs text-[#6D5F55]`}
+                  >
+                    {a.text}
+                  </span>
+                ))}
+              </div>
+              <div>
+                <p>许多家庭正在慢慢用安语，把不好说的话说清楚一点。</p>
+                <div className="mt-1 flex items-center gap-0.5 text-[#D4A574]" aria-hidden>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
               <Link
                 href="#how-it-works"
-                className="inline-flex items-center justify-center rounded-2xl bg-[#9D6A4D] px-7 py-4 text-center text-base text-white shadow-lg shadow-[#9D6A4D]/20 transition hover:bg-[#8a5d43]"
+                className="inline-flex items-center justify-center rounded-full bg-[#D4A574] px-6 py-3 text-white transition-colors hover:bg-[#C4956A]"
               >
                 看看它如何连接家人
               </Link>
               <Link
                 href="/cn/product"
-                className="inline-flex items-center justify-center rounded-2xl border border-white bg-white/80 px-7 py-4 text-center text-base text-[#6D4F3D] shadow-sm transition hover:bg-white"
+                className="inline-flex items-center justify-center rounded-full border border-[#D4A574] bg-white/85 px-6 py-3 text-[#D4A574] transition-colors hover:bg-[#D4A574] hover:text-white"
               >
                 申请试用
               </Link>
