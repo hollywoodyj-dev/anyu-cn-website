@@ -6,6 +6,13 @@
 - **部署：** `https://anyu-cn-website.vercel.app`（中文 `/cn`）。
 - **API 里程碑：** Step 3–4 SSE；Step 5–6 `session` + `risk/evaluate`；Step 7–8 **`message` 内先 risk**（L3/L4 → `risk_gate`，不调 LLM）+ **consent** `501` 占位；**Step 9–10** `stt` + **`/api/elder-chat/transcribe`**；**middleware** + **`/api/cn/disclaimer-ack`**（`/cn` 门；`/api` 未门控）。**STT 与 ESP/xiaozhi 对齐说明：** `docs/anyu/ANYU_STT_ESP_xiaozhi_alignment.md`（默认生产：**设备整句转写 → 文本 → `message`**，`bridge`）。
 
+### 2026-04-27 首页与顶栏（后续迭代）
+
+- **首页 UI：** `components/anyu/warm-connection-home.tsx`；右侧 **`HomeHeroVisual`** 使用 `public/anyu/home/hero-lifestyle.(jpg|webp|png)` 时整图展示，**左/底**与页面色 `#F8F3EC` 渐变融边；**下方独立** `LampAndAppShowcase` 双卡展示 **安语灯** / **子女端 App**（`lamp.png`、`child-app.png`）。无整图时 Hero 为轻量占位，避免与下重复。
+- **配图说明：** `docs/anyu/CN_homepage_assets.md`；README 有摘要。
+- **顶栏：** 导航含「**子女端 App**」等；`app/cn/layout.tsx`。
+- **Logo 文件：** `public/anyu/anyu-logo-mark.png`；设计导出为黑底位图时放 **`anyu-logo-source.png`** 后跑 **`npm run logo:transparent`**（`scripts/anyu-logo-remove-black.mjs` 去近黑底并缩放输出）。**标头已加大** 使图形与「安语 + 让爱，被听见」字块视觉对齐（约 **h-16 / md:h-20**，随设计可再调）。
+
 ## 2026-04-26
 
 - 在 `c:\github\anyu-cn-website` 初始化独立 Next 15 工作区；实现 Spec V1 路由与锁账文案、基础 `anyu` 组件与 `AGENTS.md`。
