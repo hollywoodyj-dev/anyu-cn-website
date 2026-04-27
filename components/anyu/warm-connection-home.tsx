@@ -57,11 +57,11 @@ export function WarmConnectionHome() {
 
         <div className="relative z-20 flex min-h-[480px] items-center">
           <div className="w-full max-w-xl space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#f0e4d8] bg-white/80 px-4 py-2 text-sm text-[#8B7E74]">
+            <div className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-[#f0e4d8] bg-white/80 px-3 py-2 text-xs text-[#8B7E74] sm:px-4 sm:text-sm">
               <Sparkles className="h-4 w-4 text-[#D4A574]" />
               为长者与家人设计的情感连接系统
             </div>
-            <h1 className="text-4xl font-bold leading-tight text-[#2D2D2D] md:text-5xl">
+            <h1 className="text-[2.35rem] font-bold leading-tight text-[#2D2D2D] md:text-5xl">
               让父母没说出口的话，
               <br />
               <span className="text-[#A86F4C]">被温柔听见。</span>
@@ -71,11 +71,17 @@ export function WarmConnectionHome() {
               <br />
               帮助他们表达，也帮助你更早靠近。
             </p>
-            <div className="flex items-center gap-4">
-              <Link href="#how-it-works" className="rounded-full bg-[#D4A574] px-6 py-3 text-white transition-colors hover:bg-[#C4956A]">
+            <div className="flex flex-nowrap items-center gap-3 sm:gap-4">
+              <Link
+                href="#how-it-works"
+                className="whitespace-nowrap rounded-full bg-[#D4A574] px-5 py-3 text-[0.95rem] text-white transition-colors hover:bg-[#C4956A] sm:px-6 sm:text-base"
+              >
                 看看它如何连接家人
               </Link>
-              <Link href="/cn/product" className="rounded-full border border-[#D4A574] px-6 py-3 text-[#D4A574] transition-colors hover:bg-[#D4A574] hover:text-white">
+              <Link
+                href="/cn/product"
+                className="whitespace-nowrap rounded-full border border-[#D4A574] px-5 py-3 text-[0.95rem] text-[#D4A574] transition-colors hover:bg-[#D4A574] hover:text-white sm:px-6 sm:text-base"
+              >
                 申请试用
               </Link>
             </div>
@@ -88,7 +94,9 @@ export function WarmConnectionHome() {
                 ))}
               </div>
               <div>
-                <div className="text-sm text-[#8B7E74]">许多家庭正在慢慢用安语，把不好说的话说清楚一点。</div>
+                <div className="text-xs leading-snug text-[#8B7E74] sm:text-sm">
+                  许多家庭正在慢慢用安语，把不好说的话说清楚一点。
+                </div>
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Star key={i} className="h-3.5 w-3.5 text-[#D4A574]" fill="#D4A574" />
@@ -135,29 +143,29 @@ export function WarmConnectionHome() {
           ].map((s) => (
             <div key={s.n} className="relative">
               <div className="relative flex min-h-[23rem] flex-col rounded-[2rem] border border-[#F4E6D9] bg-white px-7 pb-5 pt-6 shadow-[0_14px_38px_rgba(230,205,182,0.25)]">
-                <div className="mb-6 flex items-start gap-4">
+                <div className="mb-6 flex items-start gap-3 md:gap-4">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E0A46F] text-sm font-semibold text-white">{s.n}</div>
                   <div>
-                    <h3 className="mb-1 text-2xl font-semibold leading-none text-[#2D2D2D]">{s.title}</h3>
-                    <p className="mt-2 whitespace-pre-line text-base leading-7 text-[#6F655D]">{s.desc}</p>
+                    <h3 className="mb-1 text-[1.85rem] font-semibold leading-none text-[#2D2D2D] md:text-2xl">{s.title}</h3>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-7 text-[#6F655D] md:text-base">{s.desc}</p>
                   </div>
                 </div>
                 {s.side === "left" && (
-                  <div className="flex flex-1 items-center justify-between gap-4">
-                    <div className="ml-1 w-[8rem] overflow-hidden rounded-[1.6rem] bg-[#FBF5EE]">
+                  <div className="flex flex-1 items-center justify-between gap-3 md:gap-4">
+                    <div className="ml-1 w-[6.6rem] overflow-hidden rounded-[1.6rem] bg-[#FBF5EE] md:w-[8rem]">
                       <Image src="/anyu/mockup/how-it-works-left.png" alt="安语灯产品图" width={320} height={360} className="h-[9rem] w-full object-cover object-center" />
                     </div>
-                    <div className="flex min-h-[6.75rem] flex-1 items-center justify-center rounded-[1.2rem] bg-[#F7EFE6] px-4 py-3 text-center text-base leading-7 text-[#3B332E] whitespace-pre-line">
+                    <div className="flex min-h-[6.75rem] min-w-[9.6rem] flex-1 items-center justify-center rounded-[1.2rem] bg-[#F7EFE6] px-3 py-3 text-center text-[0.95rem] leading-8 text-[#3B332E] whitespace-pre-line md:px-4 md:text-base md:leading-7">
                       家里都挺好。{"\n"}晚点和你说说话就好了。
                     </div>
                   </div>
                 )}
                 {s.side === "middle" && (
-                  <div className="flex flex-1 items-center justify-between gap-4">
-                    <div className="ml-1 flex h-24 w-24 items-center justify-center rounded-full bg-[#F7EFE6]">
+                  <div className="flex flex-1 items-center justify-between gap-3 md:gap-4">
+                    <div className="ml-1 flex h-20 w-20 items-center justify-center rounded-full bg-[#F7EFE6] md:h-24 md:w-24">
                       <Image src="/anyu/mockup/anyu-logo-no-font.png" alt="安语 logo" width={84} height={84} className="h-[5.2rem] w-[5.2rem] object-contain" />
                     </div>
-                    <div className="flex min-h-[6.75rem] flex-1 items-center rounded-[1.2rem] bg-[#F7F1E8] px-4 py-3 text-left text-base leading-7 text-[#3B332E] whitespace-pre-line">
+                    <div className="flex min-h-[6.75rem] min-w-[9.6rem] flex-1 items-center rounded-[1.2rem] bg-[#F7F1E8] px-3 py-3 text-left text-[0.95rem] leading-8 text-[#3B332E] whitespace-pre-line md:px-4 md:text-base md:leading-7">
                       妈妈状态挺好，{"\n"}就是有点想你。
                     </div>
                   </div>
@@ -204,11 +212,17 @@ export function WarmConnectionHome() {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage:
-                  "linear-gradient(90deg, rgba(255,251,247,1) 0%, rgba(255,251,247,0.985) 24%, rgba(255,251,247,0.9) 40%, rgba(255,251,247,0.42) 56%, rgba(255,251,247,0.08) 72%, rgba(255,251,247,0) 84%), url('/anyu/mockup/final-light-right-composition.png')",
-                backgroundSize: "100% 100%, cover",
-                backgroundPosition: "left top, right center",
+                backgroundImage: "url('/anyu/mockup/final-light-right-composition.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "right center",
                 backgroundRepeat: "no-repeat",
+              }}
+            />
+            <div
+              className="absolute inset-0 hidden md:block"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, rgba(255,251,247,1) 0%, rgba(255,251,247,0.985) 24%, rgba(255,251,247,0.9) 40%, rgba(255,251,247,0.42) 56%, rgba(255,251,247,0.08) 72%, rgba(255,251,247,0) 84%)",
               }}
             />
             <div className="relative z-10 p-8">
@@ -228,11 +242,17 @@ export function WarmConnectionHome() {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage:
-                  "linear-gradient(90deg, rgba(255,251,247,1) 0%, rgba(255,251,247,0.98) 26%, rgba(255,251,247,0.9) 46%, rgba(255,251,247,0.52) 68%, rgba(255,251,247,0.12) 88%, rgba(255,251,247,0) 100%), url('/anyu/mockup/final-app-status-right-composition.png')",
-                backgroundSize: "100% 100%, cover",
-                backgroundPosition: "left top, right center",
+                backgroundImage: "url('/anyu/mockup/final-app-status-right-composition.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "right center",
                 backgroundRepeat: "no-repeat",
+              }}
+            />
+            <div
+              className="absolute inset-0 hidden md:block"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, rgba(255,251,247,1) 0%, rgba(255,251,247,0.98) 26%, rgba(255,251,247,0.9) 46%, rgba(255,251,247,0.52) 68%, rgba(255,251,247,0.12) 88%, rgba(255,251,247,0) 100%)",
               }}
             />
             <div className="relative z-10 p-8">
