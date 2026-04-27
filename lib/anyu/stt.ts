@@ -87,6 +87,26 @@ function parseBridgeText(json: unknown): string {
   return "";
 }
 
+function parseBridgeError(json: unknown): { code?: string; message?: string } | null {
+  if (!json || typeof json !== "object") return null;
+  const j = json as {
+    success?: unknown;
+    code?: unknown;
+    message?: unknown;
+    error?: unknown;
+  };
+  const message =
+    typeof j.message === "string"
+      ? j.message
+      : typeof j.error === "string"
+        ? j.error
+        : undefined;
+  const code = typeof j.code === "string" ? j.code : undefined;
+  const successFalse = j.success === false;
+  if (!successFalse && !message && !code) return null;
+  return { code, message };
+}
+
 async function transcribeViaBridge(
   bytes: Uint8Array,
   mime: string,
@@ -148,6 +168,13 @@ async function transcribeViaBridge(
       json = raw ? JSON.parse(raw) : {};
     } catch {
       throw new SttUpstreamError("Invalid JSON from bridge STT", res.status);
+    }
+    const bridgeErr = parseBridgeError(json);
+    if (bridgeErr?.message || bridgeErr?.code) {
+      throw new SttUpstreamError(
+        `${bridgeErr.code ?? "STT_UPSTREAM_ERROR"}${bridgeErr.message ? `: ${bridgeErr.message}` : ""}`,
+        502,
+      );
     }
     const text = parseBridgeText(json);
     if (!text) {

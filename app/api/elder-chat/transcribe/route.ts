@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  getAnyuSttProvider,
   SttBridgeConfigError,
   SttMissingApiKeyError,
   SttNotOnServerError,
@@ -9,7 +10,16 @@ import {
 
 export const runtime = "nodejs";
 
-const MAX_BYTES = 24 * 1024 * 1024;
+const OPENAI_MAX_BYTES = 24 * 1024 * 1024;
+const BRIDGE_DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
+
+function maxBytesByProvider(): number {
+  const provider = getAnyuSttProvider();
+  if (provider !== "bridge") return OPENAI_MAX_BYTES;
+  const raw = Number(process.env.ANYU_BRIDGE_STT_MAX_BYTES ?? BRIDGE_DEFAULT_MAX_BYTES);
+  if (!Number.isFinite(raw) || raw <= 0) return BRIDGE_DEFAULT_MAX_BYTES;
+  return Math.floor(raw);
+}
 
 /**
  * POST /api/elder-chat/transcribe — Spec §6（utterance-complete STT）
@@ -42,8 +52,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (entry.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Audio file too large (max 24MB)." }, { status: 413 });
+  const maxBytes = maxBytesByProvider();
+  if (entry.size > maxBytes) {
+    const maxMb = Math.floor(maxBytes / (1024 * 1024));
+    return NextResponse.json(
+      { error: `Audio file too large (max ${maxMb}MB).` },
+      { status: 413 },
+    );
   }
 
   const langField = form.get("lang");

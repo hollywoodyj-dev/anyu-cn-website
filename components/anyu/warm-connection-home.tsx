@@ -108,7 +108,13 @@ export function WarmConnectionHome() {
         </div>
 
         <div className="relative mt-8 overflow-hidden rounded-[2rem] bg-[#F5EDE4] shadow-[0_24px_60px_rgba(212,165,116,0.12)] lg:hidden">
-          <Image src="/anyu/mockup/anyu-hero.png" alt="安语首页首屏展示图" width={1200} height={720} className="h-[320px] w-full object-cover object-[center_56%]" />
+          <Image
+            src="/anyu/mockup/anyu-hero.png"
+            alt="安语首页首屏展示图"
+            width={1200}
+            height={720}
+            className="h-[320px] w-full object-contain object-center"
+          />
         </div>
       </section>
 
@@ -210,11 +216,9 @@ export function WarmConnectionHome() {
         <div className="grid gap-8 md:grid-cols-2">
           <div className="relative min-h-[33rem] overflow-hidden rounded-3xl shadow-sm">
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 bg-cover bg-center md:bg-[position:right_center]"
               style={{
                 backgroundImage: "url('/anyu/mockup/final-light-right-composition.png')",
-                backgroundSize: "cover",
-                backgroundPosition: "right center",
                 backgroundRepeat: "no-repeat",
               }}
             />
@@ -248,6 +252,7 @@ export function WarmConnectionHome() {
                 backgroundRepeat: "no-repeat",
               }}
             />
+            <div className="absolute inset-0 bg-[#FFFBF7]/40 md:hidden" />
             <div
               className="absolute inset-0 hidden md:block"
               style={{
