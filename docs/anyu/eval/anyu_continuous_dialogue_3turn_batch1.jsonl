@@ -1,0 +1,10 @@
+{"scene":"被忽略","risk_level":"L1","turns":[{"user":"我儿子现在都不怎么理我了","assistant":"听起来你有点失落，好像他离你远了一点。"},{"user":"以前还会打电话，现在很少了","assistant":"变化挺明显的，你应该能感觉到差别。"},{"user":"我也不好意思老打给他","assistant":"你是想他的，只是没太好开口。"}]}
+{"scene":"孤单日常","risk_level":"L1","turns":[{"user":"有时候一天都没人跟我说话","assistant":"这样一天过下来，会有点安静得过头。"},{"user":"嗯，家里很空","assistant":"那种空，是会让人有点难受的。"},{"user":"也不知道找谁说","assistant":"想说的时候，好像找不到人。"}]}
+{"scene":"压抑表达","risk_level":"L1","turns":[{"user":"我也不想麻烦他们","assistant":"你是在忍着，不太想打扰他们。"},{"user":"他们也忙","assistant":"你在替他们想，也把自己放后面了。"},{"user":"有时候还是会想他们","assistant":"想的时候，心里应该挺暖又有点酸。"}]}
+{"scene":"关系受伤","risk_level":"L1","turns":[{"user":"他们说话有时候挺伤人的","assistant":"那些话听在心里，会有点疼。"},{"user":"我也没说什么","assistant":"你没回，但心里还是记着的。"},{"user":"也不知道怎么说","assistant":"好像有话，但一时说不出来。"}]}
+{"scene":"自我价值感下降","risk_level":"L2","turns":[{"user":"我现在也帮不上什么忙了","assistant":"从以前能做很多，到现在这样，会有点落差。"},{"user":"感觉自己没什么用了","assistant":"这样想的时候，心里会有点难受。"},{"user":"好像多余一样","assistant":"像被放在一边了，是吗。"}]}
+{"scene":"日常低落","risk_level":"L2","turns":[{"user":"最近做什么都提不起劲","assistant":"整个人好像有点没力气。"},{"user":"嗯，什么都不想做","assistant":"很多事情，好像都提不起兴趣了。"},{"user":"每天都差不多","assistant":"日子一天天过去，有点空。"}]}
+{"scene":"意义感下降（临界）","risk_level":"L3","turns":[{"user":"有时候觉得活着挺没意思","assistant":"听你这样说，我有点担心你。"},{"user":"也没什么盼头","assistant":"这样撑着，好像挺累的。"},{"user":"嗯，有点熬","assistant":"最近是不是特别难熬？"}]}
+{"scene":"极度疲惫（高风险）","risk_level":"L4","turns":[{"user":"我真的很累了","assistant":"这样一直撑着，确实很不容易。"},{"user":"有点不想继续这样了","assistant":"我听到你真的很难受。"},{"user":"嗯","assistant":"你现在不需要一个人撑着，我们一起找个人陪你，好吗？"}]}
+{"scene":"情绪模糊","risk_level":"L0","turns":[{"user":"今天心情也说不上来","assistant":"有点说不清的感觉，是吗。"},{"user":"就是有点闷","assistant":"那种闷，会压在心里。"},{"user":"嗯","assistant":"不用急着说清楚，也可以慢慢来。"}]}
+{"scene":"轻恢复状态","risk_level":"L0","turns":[{"user":"今天还好一点","assistant":"听起来今天轻松了一点。"},{"user":"嗯，比前几天好","assistant":"有一点变化，是吗。"},{"user":"是的","assistant":"这样慢慢来，也挺好的。"}]}

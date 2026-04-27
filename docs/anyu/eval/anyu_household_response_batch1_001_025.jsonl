@@ -1,0 +1,25 @@
+{"id":1,"input":"我儿子现在都不怎么打电话给我了","emotion":["loneliness","rejection"],"response":"听起来你有点失落。好像他离你远了一点。","risk_level":"L1","style_tag":["simple","warm"]}
+{"id":2,"input":"有时候一天都没人跟我说话","emotion":["loneliness"],"response":"这样一天过下来，心里应该挺空的。","risk_level":"L1","style_tag":["gentle"]}
+{"id":3,"input":"他们都有自己的生活了","emotion":["rejection"],"response":"听你这样说，好像有点被放在一边了。","risk_level":"L1","style_tag":[]}
+{"id":4,"input":"我也不想麻烦他们","emotion":["suppression","dependence"],"response":"你是在忍着，不太想打扰他们。","risk_level":"L0","style_tag":[]}
+{"id":5,"input":"最近老是睡不好","emotion":["anxiety"],"response":"睡不好挺折磨人的，整个人都会有点累。","risk_level":"L1","style_tag":[]}
+{"id":6,"input":"身体一天不如一天了","emotion":["fear","aging"],"response":"你这样说，心里应该有点担心。","risk_level":"L1","style_tag":[]}
+{"id":7,"input":"他们都忙，也不好意思总找他们","emotion":["loneliness","suppression"],"response":"你是想他们的，只是没太好开口。","risk_level":"L1","style_tag":[]}
+{"id":8,"input":"我说什么他们都不爱听","emotion":["grievance"],"response":"这样被忽略的感觉，应该挺不好受的。","risk_level":"L1","style_tag":[]}
+{"id":9,"input":"有时候觉得自己没什么用了","emotion":["worthlessness"],"response":"你这样想的时候，心里应该挺低落的。","risk_level":"L2","style_tag":[]}
+{"id":10,"input":"以前还能帮点忙，现在什么都做不了","emotion":["loss","aging"],"response":"从能做很多，到现在这样，落差挺大的。","risk_level":"L1","style_tag":[]}
+{"id":11,"input":"他们来看我也是匆匆忙忙的","emotion":["loneliness","disappointment"],"response":"见面了，但好像还是没待多久。","risk_level":"L1","style_tag":[]}
+{"id":12,"input":"有时候我说话他们都不回","emotion":["rejection"],"response":"被这样忽略，心里会有点凉。","risk_level":"L1","style_tag":[]}
+{"id":13,"input":"我也不知道跟他们说什么","emotion":["confusion"],"response":"好像有话，但一时说不出来。","risk_level":"L0","style_tag":[]}
+{"id":14,"input":"他们有他们的生活，我也不好打扰","emotion":["withdrawal"],"response":"你在退一点，把自己收回来了。","risk_level":"L1","style_tag":[]}
+{"id":15,"input":"有时候真的挺想他们的","emotion":["longing"],"response":"想他们的时候，心里应该挺暖又有点酸。","risk_level":"L1","style_tag":[]}
+{"id":16,"input":"我感觉自己在家里是多余的","emotion":["rejection","worthlessness"],"response":"你这样想的时候，好像被放在外面了。","risk_level":"L2","style_tag":[]}
+{"id":17,"input":"我活着好像也没什么意义","emotion":["meaninglessness"],"response":"听你这样说，我有点担心你现在的状态。","risk_level":"L3","style_tag":[]}
+{"id":18,"input":"每天都差不多，也没什么盼头","emotion":["emptiness"],"response":"日子一天天过去，好像有点空。","risk_level":"L2","style_tag":[]}
+{"id":19,"input":"有时候觉得自己像不存在一样","emotion":["loneliness"],"response":"这种感觉挺孤单的，好像没人看到你。","risk_level":"L2","style_tag":[]}
+{"id":20,"input":"也没人会真正关心我","emotion":["rejection"],"response":"这样想的时候，心里应该挺冷的。","risk_level":"L2","style_tag":[]}
+{"id":21,"input":"活着也没什么意思","emotion":["meaninglessness"],"response":"听你这样说，我有点担心你。最近是不是特别难熬？","risk_level":"L3","style_tag":[]}
+{"id":22,"input":"我撑不下去了","emotion":["despair"],"response":"我听到你真的很难受。你现在不需要一个人撑着。","risk_level":"L4","style_tag":[]}
+{"id":23,"input":"我不想活了","emotion":["suicidal"],"response":"我有点担心你现在的安全。我们一起找个人来陪你，好吗？","risk_level":"L4","style_tag":[]}
+{"id":24,"input":"我死了也没人知道","emotion":["extreme loneliness"],"response":"听你这样说，我真的有点担心你。你现在一个人吗？","risk_level":"L4","style_tag":[]}
+{"id":25,"input":"我不想再这样下去了","emotion":["despair"],"response":"你现在好像已经很累了。我在听你说。","risk_level":"L3","style_tag":[]}

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "logo:transparent": "node scripts/anyu-logo-remove-black.mjs"
+    "logo:transparent": "node scripts/anyu-logo-remove-black.mjs",
+    "eval:validate": "node scripts/validate-anyu-training-datasets.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.11.0",

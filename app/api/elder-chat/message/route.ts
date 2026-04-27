@@ -1,12 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   OpenAIChatUpstreamError,
-  createElderChatMessageSseStream,
   createStaticAssistantSseStream,
   runElderChatTurn,
   safeAssistantFallback,
 } from "@/lib/anyu/openai-chat";
 import { getPromptVersion } from "@/lib/anyu/prompts";
+import { buildHouseholdResponsePrompt } from "@/lib/anyu-response/householdResponsePrompt";
+import { guardAnYuResponse } from "@/lib/anyu-response/responseGuard";
+import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import { getRiskBlockedAssistantMessage, isRiskChatBlocked } from "@/lib/anyu/risk/blocked-reply";
 import { evaluateRiskText } from "@/lib/anyu/risk/evaluate";
 
@@ -20,7 +22,10 @@ type Body = {
   lang?: unknown;
   /** `true` 时返回 SSE（与 `Accept: text/event-stream` 二选一或同时用） */
   stream?: unknown;
+  turn_index?: unknown;
 };
+
+const memoryTurnCounter = new Map<string, number>();
 
 function wantsSse(req: NextRequest, body: Body): boolean {
   const accept = req.headers.get("accept") ?? "";
@@ -37,6 +42,28 @@ function baseMeta(turnId: string, lang: string, model: string, extra?: Record<st
     lang,
     ...extra,
   };
+}
+
+function routeMode(message: string): AnYuMode {
+  if (message.includes("怎么说") || message.includes("换一种说法")) {
+    return "communication_reframe";
+  }
+  if (message.includes("帮我发") || message.includes("发给")) {
+    return "family_message";
+  }
+  return "emotional_listening";
+}
+
+function resolveTurnIndex(sessionId: string | null, rawTurnIndex: unknown): number {
+  if (typeof rawTurnIndex === "number" && Number.isFinite(rawTurnIndex) && rawTurnIndex >= 1) {
+    return Math.floor(rawTurnIndex);
+  }
+  if (sessionId) {
+    const next = (memoryTurnCounter.get(sessionId) ?? 0) + 1;
+    memoryTurnCounter.set(sessionId, next);
+    return next;
+  }
+  return 1;
 }
 
 /**
@@ -67,6 +94,7 @@ export async function POST(req: NextRequest) {
 
   const conversationId = sessionId ?? crypto.randomUUID();
   const sse = wantsSse(req, body);
+  const turnIndex = resolveTurnIndex(sessionId, body.turn_index);
 
   const risk = evaluateRiskText({
     text: message,
@@ -108,6 +136,10 @@ export async function POST(req: NextRequest) {
         ...baseMeta(turnId, lang, RISK_GATE_MODEL, {
           risk: riskPayload,
           chat_invoked: false,
+            household_style_passed: true,
+            household_style_reasons: [],
+            mode: risk.level === "L4" ? "urgent_alert" : "safety_risk",
+            turn_index: turnIndex,
         }),
       },
     });
@@ -121,13 +153,31 @@ export async function POST(req: NextRequest) {
   }
 
   const configuredModel = (process.env.ANYU_OPENAI_CHAT_MODEL ?? "gpt-5.4").trim();
+  const mode = routeMode(message);
 
-  if (sse) {
-    try {
-      const stream = await createElderChatMessageSseStream(
-        { userMessage: message, turnId },
-        { conversation_id: conversationId, lang, risk: riskPayload },
-      );
+  try {
+    const prompt = buildHouseholdResponsePrompt({
+      elderMessage: message,
+      mode,
+      riskLevel: risk.level,
+      turnIndex,
+    });
+    const result = await runElderChatTurn({ userMessage: prompt, turnId });
+    const guarded = guardAnYuResponse({
+      elderMessage: message,
+      generatedResponse: result.assistantMessage,
+    });
+
+    if (sse) {
+      const stream = createStaticAssistantSseStream({
+        turnId,
+        conversation_id: conversationId,
+        lang,
+        modelLabel: result.model,
+        prompt_version: getPromptVersion(),
+        assistantText: guarded.response,
+        risk: riskPayload,
+      });
       return new Response(stream, {
         headers: {
           "Content-Type": "text/event-stream; charset=utf-8",
@@ -136,39 +186,19 @@ export async function POST(req: NextRequest) {
           "X-Accel-Buffering": "no",
         },
       });
-    } catch (err) {
-      if (err instanceof OpenAIChatUpstreamError) {
-        return NextResponse.json(
-          {
-            assistant_message: safeAssistantFallback(),
-            conversation_id: conversationId,
-            meta: {
-              ...baseMeta(turnId, lang, configuredModel, {
-                risk: riskPayload,
-                upstream_status: err.status,
-              }),
-            },
-            error: "Upstream chat failed",
-          },
-          { status: 502 },
-        );
-      }
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      console.error("[anyu-elder-chat]", { turn_id: turnId, error: msg });
-      return NextResponse.json({ error: "Internal error" }, { status: 500 });
     }
-  }
-
-  try {
-    const result = await runElderChatTurn({ userMessage: message, turnId });
 
     return NextResponse.json({
-      assistant_message: result.assistantMessage,
+      assistant_message: guarded.response,
       conversation_id: conversationId,
       meta: {
         ...baseMeta(turnId, lang, result.model, {
           risk: riskPayload,
           chat_invoked: true,
+          household_style_passed: guarded.passed,
+          household_style_reasons: guarded.reasons,
+          mode,
+          turn_index: turnIndex,
         }),
       },
     });
