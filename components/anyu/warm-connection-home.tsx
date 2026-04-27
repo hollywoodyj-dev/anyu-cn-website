@@ -1,321 +1,264 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
+  AlertCircle,
+  ArrowRight,
   Bell,
+  Feather,
   Heart,
   Leaf,
-  Link2,
+  Lightbulb,
   Lock,
   MessageCircle,
+  Mic,
   Shield,
   ShieldCheck,
   Sparkles,
   Star,
+  TrendingUp,
+  UserCheck,
   Users,
 } from "lucide-react";
-import { HomeHeroVisual } from "./home-hero-visual";
-import { LampAndAppShowcase } from "./lamp-app-showcase";
-import { SafetyNotice } from "./safety-notice";
 
 /**
- * 首页 · 温暖连接版（对齐正式官网 UI 方向；动效仅用轻量 hover，符合「几乎无动效」）。
- * 文案避免未经验证的具体数字；不堆「AI 产品腔」。
+ * 首页（按 ImagetoCode 整页版式迁入）
+ * 仅保留指定文案：`许多家庭正在慢慢用安语，把不好说的话说清楚一点。`
  */
 export function WarmConnectionHome() {
-  return (
-    <div className="relative overflow-hidden rounded-3xl bg-[#F8F3EC] text-[#3C332C] md:rounded-[2rem]">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute left-[-80px] top-[-120px] h-[420px] w-[420px] rounded-full bg-[#F2C9A8]/30 blur-3xl" />
-        <div className="absolute right-[-120px] top-[180px] h-[520px] w-[520px] rounded-full bg-[#F7D9C4]/40 blur-3xl" />
-        <div className="absolute bottom-[-160px] left-[20%] h-[520px] w-[520px] rounded-full bg-[#E7D7C8]/50 blur-3xl" />
-      </div>
+  const featureCards = [
+    { icon: <Heart className="h-6 w-6 text-white" fill="white" />, bg: "bg-[#D4A574]", title: "理解情绪", desc: "安语理解长者的情绪，心怀评判，不否定。" },
+    { icon: <Users className="h-6 w-6 text-white" />, bg: "bg-[#C4A882]", title: "连接家人", desc: "让子女更早知道父母的状态，拉近彼此距离。" },
+    { icon: <Shield className="h-6 w-6 text-white" />, bg: "bg-[#8B9A7E]", title: "安全守护", desc: "在风险出现时，安语会及时提醒家人或紧急联系人。" },
+    { icon: <Lock className="h-6 w-6 text-white" />, bg: "bg-[#9B8BAA]", title: "隐私保护", desc: "你的数据只为帮助家人，多重加密，安心使用。" },
+  ];
 
-      <div className="relative z-10 px-1 pb-16 pt-4 md:px-2 md:pb-24 md:pt-6">
-        {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-12 pb-16 pt-4 lg:grid-cols-2 lg:gap-14 lg:pb-24 lg:pt-8">
-          <div>
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white bg-white/70 px-4 py-2 text-sm text-[#7D6757] shadow-sm">
-              <Sparkles className="h-4 w-4 shrink-0 text-[#9D6A4D]" aria-hidden />
+  const commitments = [
+    { icon: <Users className="h-6 w-6 text-[#8B7E74]" />, title: "不替代", desc: "安语不替代人类关系，只做连接的桥梁。" },
+    { icon: <Leaf className="h-6 w-6 text-[#8B7E74]" />, title: "不制造依赖", desc: "鼓励真实互动，不让长者依赖设备。" },
+    { icon: <ShieldCheck className="h-6 w-6 text-[#8B7E74]" />, title: "不做决定", desc: "不提供诊断或治疗建议，重要时刻交还给人。" },
+    { icon: <UserCheck className="h-6 w-6 text-[#8B7E74]" />, title: "安全为先", desc: "在危险时刻，让爱回到人身边。" },
+  ];
+
+  return (
+    <div className="bg-[#FDF8F3] text-[#2D2D2D]">
+      <section className="relative mx-auto max-w-7xl overflow-hidden px-4 py-8 md:px-8 md:py-12 lg:min-h-[560px]">
+        <div className="absolute inset-0 hidden lg:block">
+          <div
+            className="absolute inset-0 rounded-[2rem]"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, rgba(253,248,243,1) 0%, rgba(253,248,243,0.975) 31%, rgba(253,248,243,0.62) 39%, rgba(253,248,243,0.22) 46%, rgba(253,248,243,0.06) 51%, rgba(253,248,243,0.01) 55%, rgba(253,248,243,0) 60%), url('/anyu/mockup/anyu-hero.png')",
+              backgroundRepeat: "no-repeat, no-repeat",
+              backgroundPosition: "left top, right center",
+              backgroundSize: "100% 100%, auto 118%",
+            }}
+          />
+        </div>
+
+        <div className="relative z-20 flex min-h-[480px] items-center">
+          <div className="w-full max-w-xl space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#f0e4d8] bg-white/80 px-4 py-2 text-sm text-[#8B7E74]">
+              <Sparkles className="h-4 w-4 text-[#D4A574]" />
               为长者与家人设计的情感连接系统
             </div>
-
-            <h1 className="font-bold leading-tight tracking-tight text-[#2D2D2D]">
-              <span className="block text-[clamp(1.2rem,4.5vw,3.5rem)] whitespace-nowrap md:text-5xl">
-                让父母没说出口的话，
-              </span>
-              <span className="mt-2 block text-[clamp(1.2rem,4.8vw,3.5rem)] text-[#A86F4C] md:text-5xl">
-                被温柔听见。
-              </span>
+            <h1 className="text-4xl font-bold leading-tight text-[#2D2D2D] md:text-5xl">
+              让父母没说出口的话，
+              <br />
+              <span className="text-[#A86F4C]">被温柔听见。</span>
             </h1>
-
-            <p className="mt-7 max-w-md leading-relaxed text-[#8B7E74]">
+            <p className="max-w-md leading-relaxed text-[#8B7E74]">
               安语，连接长者与家人的情感沟通系统。
               <br />
               帮助他们表达，也帮助你更早靠近。
             </p>
-
-            <div className="mt-6 flex items-center gap-3 pt-2 text-sm text-[#8B7E74]">
-              <div className="flex -space-x-2" aria-hidden>
-                {[
-                  { bg: "bg-[#EADCCF]", text: "刘" },
-                  { bg: "bg-[#DCE9E4]", text: "吴" },
-                  { bg: "bg-[#EEE4D8]", text: "周" },
-                ].map((a) => (
-                  <span
-                    key={a.text}
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white ${a.bg} text-xs text-[#6D5F55]`}
-                  >
-                    {a.text}
-                  </span>
+            <div className="flex items-center gap-4">
+              <Link href="#how-it-works" className="rounded-full bg-[#D4A574] px-6 py-3 text-white transition-colors hover:bg-[#C4956A]">
+                看看它如何连接家人
+              </Link>
+              <Link href="/cn/product" className="rounded-full border border-[#D4A574] px-6 py-3 text-[#D4A574] transition-colors hover:bg-[#D4A574] hover:text-white">
+                申请试用
+              </Link>
+            </div>
+            <div className="flex items-center gap-3 pt-4">
+              <div className="flex -space-x-2">
+                {["刘", "吴", "周"].map((n) => (
+                  <div key={n} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#E8DDD0] text-xs text-[#6D5F55]">
+                    {n}
+                  </div>
                 ))}
               </div>
               <div>
-                <p>许多家庭正在慢慢用安语，把不好说的话说清楚一点。</p>
-                <div className="mt-1 flex items-center gap-0.5 text-[#D4A574]" aria-hidden>
+                <div className="text-sm text-[#8B7E74]">许多家庭正在慢慢用安语，把不好说的话说清楚一点。</div>
+                <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                    <Star key={i} className="h-3.5 w-3.5 text-[#D4A574]" fill="#D4A574" />
                   ))}
                 </div>
               </div>
             </div>
-
-            <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-              <Link
-                href="#how-it-works"
-                className="inline-flex items-center justify-center rounded-full bg-[#D4A574] px-6 py-3 text-white transition-colors hover:bg-[#C4956A]"
-              >
-                看看它如何连接家人
-              </Link>
-              <Link
-                href="/cn/product"
-                className="inline-flex items-center justify-center rounded-full border border-[#D4A574] bg-white/85 px-6 py-3 text-[#D4A574] transition-colors hover:bg-[#D4A574] hover:text-white"
-              >
-                申请试用
-              </Link>
-            </div>
           </div>
-
-          <HomeHeroVisual />
-        </section>
-
-        <LampAndAppShowcase />
-
-        {/* 共鸣 */}
-        <section className="mx-auto max-w-6xl pb-16 md:pb-20" aria-labelledby="empathy-heading">
-          <div className="rounded-[2.5rem] border border-white bg-white/65 p-8 shadow-sm md:p-12">
-            <h2 id="empathy-heading" className="text-2xl font-semibold text-[#342B25] md:text-4xl">
-              很多时候，他们不是不想说。
-            </h2>
-            <div className="mt-8 grid gap-5 md:grid-cols-3">
-              {[
-                "拿着手机很久，却没有发出那条消息。",
-                "嘴上说“没事”，其实心里已经很久没人问。",
-                "想你，但又怕打扰你、麻烦你。",
-              ].map((text) => (
-                <div
-                  key={text}
-                  className="rounded-3xl border border-[#F0E7DE] bg-[#FBF6F0] p-6 text-base leading-7 text-[#6C5D53] md:text-lg md:leading-8"
-                >
-                  {text}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 如何工作 */}
-        <section
-          id="how-it-works"
-          className="mx-auto max-w-6xl scroll-mt-28 pb-16 md:pb-24"
-          aria-labelledby="how-heading"
-        >
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 id="how-heading" className="text-3xl font-semibold text-[#342B25] md:text-4xl">
-              安语让连接重新发生
-            </h2>
-            <p className="mt-5 text-base leading-7 text-[#74665B] md:text-lg md:leading-8">
-              不分析，不评判，不替代家人。只是把难说出口的话，变成更容易被听见的表达。
-            </p>
-          </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                icon: MessageCircle,
-                title: "父母说一句话",
-                text: "可以是不完整的、含糊的，甚至只是“今天有点累”。",
-              },
-              {
-                icon: Heart,
-                title: "安语温柔整理",
-                text: "把情绪背后的需要，整理成不伤人的表达。",
-              },
-              {
-                icon: Bell,
-                title: "家人更早听见",
-                text: "子女收到轻提醒，知道什么时候该靠近一点。",
-              },
-            ].map(({ icon: Icon, title, text }) => (
-              <div
-                key={title}
-                className="rounded-[2rem] border border-white bg-white/80 p-7 shadow-sm"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3D6C1] text-[#8C5B3E]">
-                  <Icon className="h-6 w-6" aria-hidden />
-                </div>
-                <h3 className="mt-6 text-xl font-semibold text-[#3D332C]">{title}</h3>
-                <p className="mt-3 text-base leading-7 text-[#74665B]">{text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 四卡能力 */}
-        <section className="mx-auto max-w-6xl pb-16 md:pb-20" aria-labelledby="features-heading">
-          <h2 id="features-heading" className="sr-only">
-            安语能为你做什么
-          </h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: Heart, title: "理解情绪", text: "听懂话里的想念、委屈和累。" },
-              { icon: Users, title: "连接家人", text: "把两端的话，轻轻对齐。" },
-              { icon: ShieldCheck, title: "安全守护", text: "不对劲时，优先回到人身边。" },
-              { icon: Lock, title: "隐私保护", text: "数据边界清楚，不做营销滥用。" },
-            ].map(({ icon: Icon, title, text }) => (
-              <div
-                key={title}
-                className="rounded-[2rem] border border-white bg-white/75 p-6 text-center shadow-sm md:p-7"
-              >
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F3D6C1]/90 text-[#8C5B3E]">
-                  <Icon className="h-7 w-7" aria-hidden />
-                </div>
-                <h3 className="mt-5 text-lg font-semibold text-[#3D332C]">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#74665B] md:text-base md:leading-7">{text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 我们的承诺 — 对齐伦理四向 */}
-        <section className="mx-auto max-w-6xl pb-16 md:pb-20" aria-labelledby="promise-heading">
-          <h2 id="promise-heading" className="text-center text-3xl font-semibold text-[#342B25] md:text-4xl">
-            我们的承诺
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-base text-[#74665B] md:text-lg">
-            与
-            <Link href="/cn/ethics" className="mx-1 text-[#9D6A4D] underline-offset-2 hover:underline">
-              我们的原则
-            </Link>
-            、
-            <Link href="/cn/safety" className="mx-1 text-[#9D6A4D] underline-offset-2 hover:underline">
-              安全与预警
-            </Link>
-            一致。
-          </p>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                icon: Users,
-                title: "不替代关系",
-                text: "不代替子女或照护者；重要的支持仍在人与人之间。",
-              },
-              {
-                icon: Leaf,
-                title: "不制造依赖",
-                text: "鼓励真实联系与面对面陪伴。",
-              },
-              {
-                icon: Shield,
-                title: "不做人生决定",
-                text: "不提供医疗诊断或家庭决策结论。",
-              },
-              {
-                icon: Link2,
-                title: "安全优先",
-                text: "高风险时，让人回到家人与专业人员身边。",
-              },
-            ].map(({ icon: Icon, title, text }) => (
-              <div
-                key={title}
-                className="rounded-[2rem] border border-[#F0E7DE] bg-[#FBF7F2] p-6 text-center md:p-7"
-              >
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#9D6A4D] shadow-sm">
-                  <Icon className="h-6 w-6" aria-hidden />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold text-[#3D332C]">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#6D5F55]">{text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 深色信任带 */}
-        <section className="mx-auto max-w-6xl pb-16 md:pb-28" aria-labelledby="trust-band">
-          <div className="grid items-center gap-10 rounded-[2.5rem] bg-[#3B312B] p-8 text-white shadow-2xl shadow-[#3B312B]/20 md:grid-cols-[1.2fr_0.8fr] md:p-12">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-medium text-[#F2C9A8] md:text-base">
-                <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden />
-                安全与伦理
-              </div>
-              <h2 id="trust-band" className="mt-5 text-2xl font-semibold leading-tight md:text-4xl">
-                安语不会取代家人。
-              </h2>
-              <p className="mt-5 text-base leading-7 text-[#E8DDD4] md:text-lg md:leading-8">
-                它不会制造依赖，不会替人做决定，也不会站在任何一方。当情况变严重时，系统会让人回到人身边。
-              </p>
-            </div>
-            <div className="rounded-[2rem] border border-white/10 bg-white/10 p-6">
-              {[
-                "不替代真实关系",
-                "不制造情感依赖",
-                "不做医疗或家庭决定",
-                "高风险时优先联系真人",
-              ].map((text) => (
-                <div key={text} className="border-b border-white/10 py-4 text-[#F6EDE6] last:border-b-0">
-                  {text}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <div className="mx-auto max-w-3xl">
-          <SafetyNotice title="安全提示">
-            <p>
-              当系统发现父母情绪异常或有风险时，不会继续聊天，会优先建议联系家人，并在授权下通知亲人。
-            </p>
-            <p className="text-[var(--anyu-ink-muted)]">因为有些时候，他们需要的是身边的人。</p>
-            <p className="text-sm text-[var(--anyu-ink-muted)]">（Human Override：人始终优先。）</p>
-          </SafetyNotice>
         </div>
 
-        <section
-          className="mx-auto mt-12 flex max-w-3xl flex-col items-center gap-4 border-t border-[#E5D9CE] pt-12 text-center"
-          aria-labelledby="cta-bottom"
-        >
-          <h2 id="cta-bottom" className="text-xl font-medium text-[#322A24] md:text-2xl">
-            让沟通变得更容易
+        <div className="relative mt-8 overflow-hidden rounded-[2rem] bg-[#F5EDE4] shadow-[0_24px_60px_rgba(212,165,116,0.12)] lg:hidden">
+          <Image src="/anyu/mockup/anyu-hero.png" alt="安语首页首屏展示图" width={1200} height={720} className="h-[320px] w-full object-cover object-[center_56%]" />
+        </div>
+      </section>
+
+      <section id="how-it-works" className="mx-auto max-w-7xl px-4 py-20 md:px-8">
+        <div className="mb-12 text-center">
+          <h2 className="inline-flex items-center gap-2 text-3xl font-bold text-[#2D2D2D] md:text-4xl">
+            它是如何工作的
+            <Heart className="h-5 w-5 text-[#E0A46F]" fill="#E0A46F" />
           </h2>
-          <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="#how-it-works"
-              className="inline-flex items-center justify-center rounded-2xl border border-[#E5D9CE] bg-white px-6 py-3 text-[#6D4F3D] transition hover:border-[#9D6A4D]/40"
-            >
-              看看如何工作
-            </Link>
-            <Link
-              href="/cn/product"
-              className="inline-flex items-center justify-center rounded-2xl bg-[#9D6A4D] px-6 py-3 text-white transition hover:bg-[#8a5d43]"
-            >
-              申请试用
-            </Link>
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+          {[
+            { n: "1", title: "父母说一句话", desc: "妈妈在安语灯前，轻轻说出\n此刻真实的心情。", side: "left" },
+            { n: "2", title: "安语温柔整理", desc: "安语会结合语气和状态，\n整理成更容易被看见的话。", side: "middle" },
+            { n: "3", title: "家人收到提醒", desc: "你会看到状态摘要与建议，\n知道什么时候回应更合适。", side: "right" },
+          ].map((s) => (
+            <div key={s.n} className="relative">
+              <div className="relative flex min-h-[23rem] flex-col rounded-[2rem] border border-[#F4E6D9] bg-white px-7 pb-5 pt-6 shadow-[0_14px_38px_rgba(230,205,182,0.25)]">
+                <div className="mb-6 flex items-start gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E0A46F] text-sm font-semibold text-white">{s.n}</div>
+                  <div>
+                    <h3 className="mb-1 text-2xl font-semibold leading-none text-[#2D2D2D]">{s.title}</h3>
+                    <p className="mt-2 whitespace-pre-line text-base leading-7 text-[#6F655D]">{s.desc}</p>
+                  </div>
+                </div>
+                {s.side === "left" && (
+                  <div className="flex flex-1 items-center justify-between gap-4">
+                    <div className="ml-1 w-[8rem] overflow-hidden rounded-[1.6rem] bg-[#FBF5EE]">
+                      <Image src="/anyu/mockup/how-it-works-left.png" alt="安语灯产品图" width={320} height={360} className="h-[9rem] w-full object-cover object-center" />
+                    </div>
+                    <div className="flex min-h-[6.75rem] flex-1 items-center justify-center rounded-[1.2rem] bg-[#F7EFE6] px-4 py-3 text-center text-base leading-7 text-[#3B332E] whitespace-pre-line">
+                      家里都挺好。{"\n"}晚点和你说说话就好了。
+                    </div>
+                  </div>
+                )}
+                {s.side === "middle" && (
+                  <div className="flex flex-1 items-center justify-between gap-4">
+                    <div className="ml-1 flex h-24 w-24 items-center justify-center rounded-full bg-[#F7EFE6]">
+                      <Image src="/anyu/mockup/anyu-logo-no-font.png" alt="安语 logo" width={84} height={84} className="h-[5.2rem] w-[5.2rem] object-contain" />
+                    </div>
+                    <div className="flex min-h-[6.75rem] flex-1 items-center rounded-[1.2rem] bg-[#F7F1E8] px-4 py-3 text-left text-base leading-7 text-[#3B332E] whitespace-pre-line">
+                      妈妈状态挺好，{"\n"}就是有点想你。
+                    </div>
+                  </div>
+                )}
+                {s.side === "right" && (
+                  <div className="relative mt-auto flex min-h-[120px] items-end justify-center pt-1">
+                    <div className="w-[13rem] overflow-hidden rounded-[1.9rem] bg-[#FCF7F1]">
+                      <Image src="/anyu/mockup/how-it-works-right.png" alt="安语子女端应用界面" width={360} height={520} className="h-[12.5rem] w-full object-cover object-top" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
+        <div className="mb-12 text-center">
+          <h2 className="inline-flex items-center gap-2 text-2xl font-bold md:text-3xl">
+            安语的陪伴，温柔而可靠
+            <Feather className="h-5 w-5 text-[#D4A574]" />
+          </h2>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {featureCards.map((f) => (
+            <div key={f.title} className="rounded-2xl bg-white p-6 shadow-sm">
+              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${f.bg}`}>{f.icon}</div>
+              <h3 className="mb-2 text-lg font-semibold">{f.title}</h3>
+              <p className="text-sm leading-relaxed text-[#8B7E74]">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="relative min-h-[33rem] overflow-hidden rounded-3xl shadow-sm">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, rgba(255,251,247,1) 0%, rgba(255,251,247,0.985) 24%, rgba(255,251,247,0.9) 40%, rgba(255,251,247,0.42) 56%, rgba(255,251,247,0.08) 72%, rgba(255,251,247,0) 84%), url('/anyu/mockup/final-light-right-composition.png')",
+                backgroundSize: "100% 100%, cover",
+                backgroundPosition: "left top, right center",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
+            <div className="relative z-10 p-8">
+              <h3 className="mb-2 text-2xl font-bold">安语灯</h3>
+              <p className="text-[#8B7E74]">为长者设计的温暖设备</p>
+              <div className="space-y-3 pt-[15rem]">
+                <div className="flex items-center gap-3"><Mic className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">语音表达，简单自然</span></div>
+                <div className="flex items-center gap-3"><Lightbulb className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">柔和灯光，温暖陪伴</span></div>
+                <div className="flex items-center gap-3"><AlertCircle className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">一键求助，安全安心</span></div>
+              </div>
+              <Link href="/cn/product#anyu-lamp" className="mt-6 inline-flex items-center gap-2 text-sm text-[#D4A574] transition-all hover:gap-3">
+                了解更多 <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-          <p className="text-sm text-[#8B7B70]">
-            联系：
-            <a href="mailto:hello@anyu.ai" className="text-[#9D6A4D] underline-offset-2 hover:underline">
-              hello@anyu.ai
-            </a>
-          </p>
-        </section>
-      </div>
+          <div className="relative min-h-[33rem] overflow-hidden rounded-3xl shadow-sm">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, rgba(255,251,247,1) 0%, rgba(255,251,247,0.98) 26%, rgba(255,251,247,0.9) 46%, rgba(255,251,247,0.52) 68%, rgba(255,251,247,0.12) 88%, rgba(255,251,247,0) 100%), url('/anyu/mockup/final-app-status-right-composition.png')",
+                backgroundSize: "100% 100%, cover",
+                backgroundPosition: "left top, right center",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
+            <div className="relative z-10 p-8">
+              <h3 className="mb-2 text-2xl font-bold">子女端 App</h3>
+              <p className="text-[#8B7E74]">随时了解父母的状态</p>
+              <div className="space-y-3 pt-[15rem]">
+                <div className="flex items-center gap-3"><TrendingUp className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">情绪趋势，清晰可见</span></div>
+                <div className="flex items-center gap-3"><MessageCircle className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">贴心建议，轻松行动</span></div>
+                <div className="flex items-center gap-3"><Bell className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">不打扰，只在需要时提醒</span></div>
+              </div>
+              <Link href="/cn/for-family" className="mt-6 inline-flex items-center gap-2 text-sm text-[#D4A574] transition-all hover:gap-3">
+                了解更多 <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
+        <div className="rounded-3xl bg-white p-8 shadow-sm md:p-12">
+          <div className="grid items-start gap-12 lg:grid-cols-2">
+            <div>
+              <h2 className="mb-4 text-2xl font-bold md:text-3xl">我们的承诺</h2>
+              <p className="mb-4 leading-relaxed text-[#8B7E74]">
+                安语不是替代家人，
+                <br />
+                而是帮助家人更好地在一起。
+              </p>
+              <Link href="/cn/ethics" className="inline-flex items-center gap-2 text-sm text-[#D4A574] transition-all hover:gap-3">
+                查看我们的伦理守则 <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {commitments.map((item) => (
+                <div key={item.title} className="text-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F5EDE4]">
+                    {item.icon}
+                  </div>
+                  <h4 className="mb-1 font-semibold">{item.title}</h4>
+                  <p className="text-xs leading-relaxed text-[#8B7E74]">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
