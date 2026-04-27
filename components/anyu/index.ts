@@ -8,3 +8,4 @@ export { QuietCard } from "./quiet-card";
 export { WarmConnectionHome } from "./warm-connection-home";
 export { HomeHeroVisual } from "./home-hero-visual";
 export { LampAndAppShowcase } from "./lamp-app-showcase";
+export { LampVoiceChat } from "./lamp-voice-chat";

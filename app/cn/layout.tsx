@@ -24,6 +24,7 @@ const nav = [
   { href: "/cn", label: "首页" },
   { href: "/cn/product", label: "产品介绍" },
   { href: "/cn/product#anyu-lamp", label: "安语灯" },
+  { href: "/cn/lamp-voice", label: "灯语音体验" },
   { href: "/cn/for-elder", label: "给长者" },
   { href: "/cn/for-family", label: "子女端 App" },
   { href: "/cn/safety", label: "安全与隐私" },
