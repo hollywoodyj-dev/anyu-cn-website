@@ -104,7 +104,7 @@ export default function CnLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-4">
-            <span>© 2024 AnYu. All rights reserved.</span>
+            <span>© 2026 AnYu. All rights reserved.</span>
             <div className="flex items-center gap-3">
               <MessageCircle className="h-4 w-4" />
               <Circle className="h-4 w-4 fill-current stroke-none" />

@@ -252,7 +252,7 @@ export function WarmConnectionHome() {
                 backgroundRepeat: "no-repeat",
               }}
             />
-            <div className="absolute inset-0 bg-[#FFFBF7]/40 md:hidden" />
+            <div className="absolute inset-0 bg-[#FFFBF7]/70 md:hidden" />
             <div
               className="absolute inset-0 hidden md:block"
               style={{
