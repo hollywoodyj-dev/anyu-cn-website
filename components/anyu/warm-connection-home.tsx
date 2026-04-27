@@ -112,7 +112,22 @@ export function WarmConnectionHome() {
           </h2>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+        <div className="relative grid gap-8 md:grid-cols-3 md:gap-10">
+          <svg
+            className="pointer-events-none absolute left-[18%] top-[46%] hidden w-[64%] -translate-y-1/2 md:block"
+            viewBox="0 0 760 120"
+            fill="none"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path
+              d="M4 54 C 110 16, 170 92, 255 64 S 410 28, 500 60 S 650 100, 756 52"
+              stroke="#E7D6C7"
+              strokeWidth="2"
+              strokeDasharray="4 7"
+              strokeLinecap="round"
+            />
+          </svg>
           {[
             { n: "1", title: "父母说一句话", desc: "妈妈在安语灯前，轻轻说出\n此刻真实的心情。", side: "left" },
             { n: "2", title: "安语温柔整理", desc: "安语会结合语气和状态，\n整理成更容易被看见的话。", side: "middle" },
@@ -154,6 +169,11 @@ export function WarmConnectionHome() {
                     </div>
                   </div>
                 )}
+                {s.side !== "right" ? (
+                  <div className="absolute -right-5 top-1/2 z-20 hidden -translate-y-1/2 md:flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-[0_10px_25px_rgba(232,212,195,0.45)]">
+                    <Heart className="h-4 w-4 text-[#E0A46F]" fill="#FFF3EA" />
+                  </div>
+                ) : null}
               </div>
             </div>
           ))}
@@ -199,7 +219,7 @@ export function WarmConnectionHome() {
                 <div className="flex items-center gap-3"><Lightbulb className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">柔和灯光，温暖陪伴</span></div>
                 <div className="flex items-center gap-3"><AlertCircle className="h-5 w-5 text-[#D4A574]" /><span className="text-sm">一键求助，安全安心</span></div>
               </div>
-              <Link href="/cn/product#anyu-lamp" className="mt-6 inline-flex items-center gap-2 text-sm text-[#D4A574] transition-all hover:gap-3">
+              <Link href="/cn/lamp-voice" className="mt-6 inline-flex items-center gap-2 text-sm text-[#D4A574] transition-all hover:gap-3">
                 了解更多 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

@@ -38,7 +38,7 @@ export function LampAndAppShowcase() {
                 </li>
               </ul>
               <Link
-                href="/cn/product#anyu-lamp"
+                href="/cn/lamp-voice"
                 className="inline-flex w-fit items-center gap-1 text-base font-medium text-[#9D6A4D] underline-offset-4 hover:underline"
               >
                 了解更多

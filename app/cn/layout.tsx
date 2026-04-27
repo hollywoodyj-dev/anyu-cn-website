@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 const nav = [
   { href: "/cn", label: "首页" },
   { href: "/cn/product", label: "产品介绍" },
-  { href: "/cn/product#anyu-lamp", label: "安语灯" },
+  { href: "/cn/lamp-voice", label: "安语灯" },
   { href: "/cn/for-family", label: "子女端 App" },
   { href: "/cn/safety", label: "安全与隐私" },
   { href: "/cn/about", label: "关于我们" },
