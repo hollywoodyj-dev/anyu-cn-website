@@ -96,8 +96,15 @@ Invoke-RestMethod -Method POST -Uri "http://localhost:3000/api/risk/evaluate" `
 - **`POST /api/elder-chat/transcribe`** — `multipart/form-data`，字段 **`audio`** 或 **`file`**；可选 **`lang`**（如 `zh`）。
   - `ANYU_STT_PROVIDER=openai_whisper` + **`OPENAI_API_KEY`**：走 OpenAI **`/v1/audio/transcriptions`**（`ANYU_OPENAI_TRANSCRIBE_MODEL` 默认 `whisper-1`）。
   - `ANYU_STT_PROVIDER=bridge` + **`ANYU_BRIDGE_STT_URL`**：服务端转发到外部 STT（可附 `ANYU_BRIDGE_STT_TOKEN` / `ANYU_BRIDGE_STT_TOKEN_HEADER`），返回 `text`。
+    - 对齐 ESP 合约：默认上限 **10MB**（`ANYU_BRIDGE_STT_MAX_BYTES`，默认 `10485760`），超时默认 **20s**（`ANYU_BRIDGE_STT_TIMEOUT_MS`）。
+    - 注意：`http://localhost:8003/...` 仅本机开发可用；Vercel 生产环境需可公网访问的 STT 地址。
   - `ANYU_STT_PROVIDER=off`：返回 **501** + `code: STT_USE_TEXT_BRIDGE`。
 - 与 **`message`** 相同：不在生产日志落全文音频/转写调试串（Spec §5 / §8）。
+
+### Voice eval / tuning
+
+- Playbook: `docs/anyu/ANYU_Voice_Eval_and_Tuning_Playbook_v1.md`
+- Seed set (30): `docs/anyu/eval/anyu_voice_eval_seed_30.csv`
 
 ### 免责确认 + middleware（Step 10）
 
