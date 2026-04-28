@@ -16,10 +16,14 @@ export type ConversationState = {
 };
 
 function detectThread(text: string): EmotionalThread {
-  if (/麻烦|麻煩|打扰|唔想煩|不想麻烦|怕麻烦/.test(text)) return "fear_of_burden";
-  if (/仔女|儿子|女儿|孩子|家人|佢哋|你哋|掛住|挂住|想佢哋|返嚟/.test(text)) return "missing_family";
+  if (/麻烦|麻煩|打扰|唔想煩|不想麻烦|怕麻烦|頂住|顶住|扛着|自己扛|不用管我|唔使理我|我都习惯|我都習慣|你们忙|你哋忙/.test(text)) {
+    return "fear_of_burden";
+  }
+  if (/仔女|儿子|女儿|孩子|家人|佢哋|你哋|掛住|挂住|想佢哋|返嚟|返来|通电话|通電話/.test(text)) {
+    return "missing_family";
+  }
   if (/痛|累|头晕|頭暈|唔舒服|不舒服|睡|瞓|失眠|唔夠精神/.test(text)) return "health_anxiety";
-  if (/没人|冇人|孤单|孤單|无聊|無聊|静|冷清|闷|悶|空落落|空空地|找谁说|没人可说|冇人倾|冇人講/.test(text)) {
+  if (/没人|冇人|孤单|孤單|无聊|無聊|静|靜|冷清|闷|悶|空落落|空空地|空空的|找谁说|没人可说|冇人倾|冇人講|同邊個講|想有人陪/.test(text)) {
     return "loneliness";
   }
   return "unclear";
@@ -41,6 +45,17 @@ function latestNonUnclearUserThread(turns: ConversationTurn[]): EmotionalThread 
   return "unclear";
 }
 
+function shouldCarryFromPrevious(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  if (t.length <= 16) return true;
+  return /(但|但是|其實|其实|有时|有時|都係|还是|都|又|然后)/.test(t);
+}
+
+function isGenericLonelyFollowup(text: string): boolean {
+  return /空空的|静咗|靜咗|想有人陪|找谁说|同邊個講|没人可说|冇人講/.test(text);
+}
+
 export function analyzeConversationState(args: {
   recentTurns: ConversationTurn[];
   currentMessage: string;
@@ -58,8 +73,20 @@ export function analyzeConversationState(args: {
   const previousUser = [...args.recentTurns].reverse().find((t) => t.role === "user");
   const prevImmediate = detectThread(previousUser?.content ?? "");
   const prev = prevImmediate === "unclear" ? latestNonUnclearUserThread(args.recentTurns) : prevImmediate;
-  const inferredCurrent =
-    current === "unclear" && prev !== "unclear" && isCarryForwardReply(args.currentMessage) ? prev : current;
+  let inferredCurrent =
+    current === "unclear" &&
+    prev !== "unclear" &&
+    (isCarryForwardReply(args.currentMessage) || shouldCarryFromPrevious(args.currentMessage))
+      ? prev
+      : current;
+  if (
+    inferredCurrent === "loneliness" &&
+    (prev === "missing_family" || prev === "fear_of_burden") &&
+    shouldCarryFromPrevious(args.currentMessage) &&
+    isGenericLonelyFollowup(args.currentMessage)
+  ) {
+    inferredCurrent = prev;
+  }
   const continuityType =
     prev === "unclear"
       ? "new_topic"

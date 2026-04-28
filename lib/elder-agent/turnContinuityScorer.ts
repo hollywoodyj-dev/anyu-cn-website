@@ -20,13 +20,16 @@ export function scoreTurnContinuity(input: {
   const previousUser = [...input.recentTurns].reverse().find((t) => t.role === "user")?.content ?? "";
   const merged = `${previousUser} ${input.currentMessage}`;
   const resp = input.assistantResponse.trim();
-  const hasFamilyThread = /(孩子|儿子|女儿|仔女|家人|佢哋)/.test(merged);
-  const hasBurdenThread = /(麻烦|打扰|唔想煩|不想麻烦)/.test(merged);
-  const hasLonelyThread = /(没人|冇人|冷清|孤单|静)/.test(merged);
+  const hasFamilyThread = /(孩子|儿子|女儿|仔女|家人|佢哋|你哋|返嚟|返来|挂住|掛住)/.test(merged);
+  const hasBurdenThread =
+    /(麻烦|麻煩|打扰|唔想煩|不想麻烦|自己扛|扛着|頂住|顶住|不用管我|唔使理我|我都习惯|我都習慣|你们忙|你哋忙)/.test(
+      merged,
+    );
+  const hasLonelyThread = /(没人|冇人|冷清|孤单|孤單|静|靜|空空的|空落落|同邊個講|找谁说|想有人陪)/.test(merged);
   const hasHealthThread = /(唔舒服|不舒服|头晕|頭暈|痛|累|失眠|瞓|睡)/.test(merged);
-  const catchesFamily = /(孩子|仔女|家人|佢哋|他们)/.test(resp);
-  const catchesBurden = /(麻烦|麻煩|打扰|自己扛|頂住|顶住|咽回|唔想煩|忍住)/.test(resp);
-  const catchesLonely = /(冷清|静|靜|孤单|孤單|空|空落落|空空地|冇人|没人)/.test(resp);
+  const catchesFamily = /(孩子|仔女|家人|佢哋|他们|掛住|挂住)/.test(resp);
+  const catchesBurden = /(麻烦|麻煩|打扰|自己扛|頂住|顶住|咽回|唔想煩|忍住|习惯了|習慣|不用管|唔使理)/.test(resp);
+  const catchesLonely = /(冷清|静|靜|孤单|孤單|空|空落落|空空地|空空的|冇人|没人|陪下|陪一陪|同邊個講)/.test(resp);
   const catchesHealth = /(唔舒服|不舒服|头晕|頭暈|痛|累|休息|瞓|睡)/.test(resp);
   const shortFollowUp = /(你.*[？?]|係咪|会不会|對嗎|对吗|想唔想|想不想)/.test(resp);
 
