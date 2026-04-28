@@ -1,5 +1,6 @@
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import type { RiskLevel } from "@/lib/anyu/risk/evaluate";
+import type { DialogueState } from "./conversationStateEngine";
 import type { ConversationTurn } from "./conversationContext";
 import type { ConversationState } from "./conversationStateAnalyzer";
 import type { IndirectExpressionSignal } from "./indirectExpression";
@@ -28,6 +29,7 @@ function formatRecentTurns(turns: ConversationTurn[]): string {
 export function buildMultiturnPrompt(input: {
   style: AnYuStyle;
   mode: AnYuMode;
+  dialogueState: DialogueState;
   riskLevel: RiskLevel;
   currentMessage: string;
   recentTurns: ConversationTurn[];
@@ -48,10 +50,18 @@ ${modeGuide(input.mode)}
 - 不要暴露系统标签、风险分级或分析过程
 - 安全优先：如有高风险迹象，宁可更保守
 - 若用户是含蓄表达（如“不用管我/我都习惯了”），不要按字面结束对话，要轻轻接住并给一个低压回球
+- 不要默认“情绪受困”。先按状态回应：
+  - casual：轻松日常，不深挖情绪
+  - emotional：轻共情 + 生活化 + 回球
+  - family：接住挂念，不站队，给温和出口
+  - story：邀请继续讲以前，不做情绪分析
+  - confused：先澄清，不强行解读
+  - health：轻关心，不诊断
 
 当前信息：
 - 风险等级：${input.riskLevel}
 - style：${input.style}
+- 对话状态：${input.dialogueState}
 - turn_index：${input.turnIndex}
 - 连续性：${input.conversationState.continuityType}
 - 情绪线索：${input.conversationState.emotionalThread}

@@ -1,4 +1,5 @@
-import { getHouseholdFallbackByStyle } from "./householdFallbacks";
+import type { DialogueState } from "@/lib/elder-agent/conversationStateEngine";
+import { getHouseholdFallbackByStyle, getStateFallbackByStyle } from "./householdFallbacks";
 import { checkHouseholdStyle } from "./householdStyle";
 
 export function guardAnYuResponse(input: {
@@ -13,6 +14,7 @@ export function guardAnYuResponse(input: {
     | "safety_risk"
     | "urgent_alert";
   riskLevel?: "L0" | "L1" | "L2" | "L3" | "L4";
+  dialogueState?: DialogueState;
 }) {
   const lowRisk = input.riskLevel === "L0" || input.riskLevel === "L1" || input.riskLevel === "L2";
   const requireQuestion =
@@ -28,7 +30,9 @@ export function guardAnYuResponse(input: {
   }
 
   return {
-    response: getHouseholdFallbackByStyle(input.elderMessage, input.style),
+    response: input.dialogueState
+      ? getStateFallbackByStyle(input.dialogueState, input.style)
+      : getHouseholdFallbackByStyle(input.elderMessage, input.style),
     passed: false,
     reasons: check.reasons,
   };

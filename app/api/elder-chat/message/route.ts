@@ -3,9 +3,15 @@ import {
   appendTurn,
   getRecentTurns,
 } from "@/lib/elder-agent/conversationContext";
+import {
+  detectConversationState,
+  normalizeInputText,
+  type DialogueState,
+} from "@/lib/elder-agent/conversationStateEngine";
 import { analyzeConversationState } from "@/lib/elder-agent/conversationStateAnalyzer";
 import { detectIndirectExpression } from "@/lib/elder-agent/indirectExpression";
 import { buildMultiturnPrompt } from "@/lib/elder-agent/multiturnPromptBuilder";
+import { repetitionGuard } from "@/lib/elder-agent/repetitionGuard";
 import { resolveAnYuStyle } from "@/lib/elder-agent/styleRouter";
 import { scoreTurnContinuity } from "@/lib/elder-agent/turnContinuityScorer";
 import {
@@ -15,7 +21,7 @@ import {
   safeAssistantFallback,
 } from "@/lib/anyu/openai-chat";
 import { getPromptVersion } from "@/lib/anyu/prompts";
-import { getIndirectFallbackByStyle } from "@/lib/anyu-response/householdFallbacks";
+import { getIndirectFallbackByStyle, getStateFallbackByStyle } from "@/lib/anyu-response/householdFallbacks";
 import { checkHouseholdStyle } from "@/lib/anyu-response/householdStyle";
 import { guardAnYuResponse } from "@/lib/anyu-response/responseGuard";
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
@@ -34,6 +40,7 @@ type Body = {
   /** `true` 时返回 SSE（与 `Accept: text/event-stream` 二选一或同时用） */
   stream?: unknown;
   turn_index?: unknown;
+  asr_confidence?: unknown;
 };
 
 const memoryTurnCounter = new Map<string, number>();
@@ -61,6 +68,14 @@ function routeMode(message: string): AnYuMode {
   }
   if (message.includes("帮我发") || message.includes("发给")) {
     return "family_message";
+  }
+  return "emotional_listening";
+}
+
+function modeFromState(state: DialogueState): AnYuMode {
+  if (state === "family") return "family_message";
+  if (state === "casual" || state === "story" || state === "confused" || state === "health") {
+    return "supportive_response";
   }
   return "emotional_listening";
 }
@@ -102,6 +117,7 @@ export async function POST(req: NextRequest) {
   }
 
   const message = body.message.trim();
+  const normalizedInput = normalizeInputText(message);
   const lang =
     typeof body.lang === "string" && body.lang.trim() ? body.lang.trim() : "zh";
 
@@ -117,6 +133,7 @@ export async function POST(req: NextRequest) {
     message,
   });
   const recentTurns = await getRecentTurns(sessionId);
+  const asrConfidenceRaw = typeof body.asr_confidence === "number" ? body.asr_confidence : null;
 
   const risk = evaluateRiskText({
     text: message,
@@ -198,18 +215,26 @@ export async function POST(req: NextRequest) {
   }
 
   const configuredModel = (process.env.ANYU_OPENAI_CHAT_MODEL ?? "gpt-5.4").trim();
+  const dialogueState = detectConversationState({
+    text: normalizedInput,
+    riskLevel: risk.level,
+    asrConfidence: asrConfidenceRaw,
+  });
   const mode = routeMode(message);
+  const stateDrivenMode = modeFromState(dialogueState);
+  const finalMode = mode === "communication_reframe" ? mode : stateDrivenMode;
   const conversationState = analyzeConversationState({
     recentTurns,
-    currentMessage: message,
+    currentMessage: normalizedInput,
     currentRiskLevel: risk.level,
   });
-  const indirectSignal = detectIndirectExpression(message);
+  const indirectSignal = detectIndirectExpression(normalizedInput);
 
   try {
     const prompt = buildMultiturnPrompt({
-      currentMessage: message,
-      mode,
+      currentMessage: normalizedInput,
+      mode: finalMode,
+      dialogueState,
       riskLevel: risk.level,
       style,
       recentTurns,
@@ -219,21 +244,31 @@ export async function POST(req: NextRequest) {
     });
     const result = await runElderChatTurn({ userMessage: prompt, turnId });
     const guarded = guardAnYuResponse({
-      elderMessage: message,
+      elderMessage: normalizedInput,
       generatedResponse: result.assistantMessage,
       style,
-      mode,
+      mode: finalMode,
       riskLevel: risk.level,
+      dialogueState,
     });
     const directIndirectHandled = /(忍着|頂住|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(
       guarded.response,
     );
-    const requireQuestion = requiresReturnQuestion(mode, risk.level);
+    const requireQuestion = requiresReturnQuestion(finalMode, risk.level);
     const indirectHandledText = directIndirectHandled ? guarded.response : getIndirectFallbackByStyle(style);
     let finalResponse = indirectSignal.hasIndirectRestraint ? indirectHandledText : guarded.response;
     let finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     if (indirectSignal.hasIndirectRestraint && !finalStyleCheck.pass) {
       finalResponse = getIndirectFallbackByStyle(style);
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    }
+    const recentAssistantResponses = recentTurns
+      .filter((t) => t.role === "assistant")
+      .map((t) => t.content)
+      .slice(-5);
+    const repeated = repetitionGuard(finalResponse, recentAssistantResponses);
+    if (repeated.blocked) {
+      finalResponse = getStateFallbackByStyle(dialogueState, style, turnIndex + recentAssistantResponses.length);
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     }
     const indirectStrategy = !indirectSignal.hasIndirectRestraint
@@ -244,18 +279,18 @@ export async function POST(req: NextRequest) {
     const indirectHandled = !indirectSignal.hasIndirectRestraint || indirectStrategy !== "none";
     const continuityScore = scoreTurnContinuity({
       recentTurns,
-      currentMessage: message,
+      currentMessage: normalizedInput,
       assistantResponse: finalResponse,
       state: conversationState,
     });
 
     await appendTurn(sessionId, {
       role: "user",
-      content: message,
+      content: normalizedInput,
       turnIndex,
       riskLevel: risk.level,
       style,
-      mode,
+      mode: finalMode,
     });
     await appendTurn(sessionId, {
       role: "assistant",
@@ -263,7 +298,7 @@ export async function POST(req: NextRequest) {
       turnIndex,
       riskLevel: risk.level,
       style,
-      mode,
+      mode: finalMode,
     });
 
     if (sse) {
@@ -295,9 +330,25 @@ export async function POST(req: NextRequest) {
           chat_invoked: true,
           household_style_passed: finalStyleCheck.pass,
           household_style_reasons: finalStyleCheck.reasons,
-          mode,
+          mode: finalMode,
           turn_index: turnIndex,
           style,
+          dialogue_state: dialogueState,
+          runtime: {
+            userInput: message,
+            normalizedInput,
+            asrConfidence: asrConfidenceRaw,
+            detectedState: dialogueState,
+            detectedEmotion: conversationState.emotionalThread,
+            riskLevel: risk.level,
+            selectedStyle: style,
+            selectedMode: finalMode,
+            templateId: indirectSignal.hasIndirectRestraint ? "indirect_path" : "model_path",
+            response: finalResponse,
+            repetitionBlocked: repeated.blocked,
+            qaResult: finalStyleCheck.pass ? "pass" : "fallback_used",
+            failureReason: repeated.reason ?? (finalStyleCheck.pass ? null : "style_guard"),
+          },
           continuity: {
             usedRecentTurns: recentTurns.length > 0,
             recentTurnsCount: recentTurns.length,
