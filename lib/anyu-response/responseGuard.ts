@@ -6,7 +6,7 @@ export function guardAnYuResponse(input: {
   generatedResponse: string;
   style?: "mandarin_gentle" | "cantonese_chat";
 }) {
-  const check = checkHouseholdStyle(input.generatedResponse);
+  const check = checkHouseholdStyle(input.generatedResponse, input.style);
 
   if (check.pass) {
     return {

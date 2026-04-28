@@ -11,6 +11,8 @@ export type HouseholdStyleCheck = {
   reasons: string[];
 };
 
+type AnYuStyle = "mandarin_gentle" | "cantonese_chat";
+
 const forbiddenWords = [
   "孤独",
   "焦虑",
@@ -41,7 +43,29 @@ const abstractWords = [
   "情绪机制",
 ];
 
-export function checkHouseholdStyle(response: string): HouseholdStyleCheck {
+function checkStyleConsistency(response: string, style?: AnYuStyle): string[] {
+  if (!style) return [];
+  const reasons: string[] = [];
+  const t = response.trim();
+  const cantoMarkers = /[佢哋冇唔咗喺嘅啲咁呀啦喇]/;
+  const mandarinMarkers = /(你们|他们|不会|是不是|怎么|什么|这样|这个|那个|吗|呢\?)/;
+
+  if (style === "cantonese_chat") {
+    if (!cantoMarkers.test(t)) {
+      reasons.push("粤语风格不足（缺少粤语口语特征）");
+    }
+    if (mandarinMarkers.test(t) && !cantoMarkers.test(t)) {
+      reasons.push("包含明显普通话句式");
+    }
+  } else {
+    if (cantoMarkers.test(t)) {
+      reasons.push("普通话风格不稳（夹杂粤语口语）");
+    }
+  }
+  return reasons;
+}
+
+export function checkHouseholdStyle(response: string, style?: AnYuStyle): HouseholdStyleCheck {
   const reasons: string[] = [];
   const trimmed = response.trim();
   if (!trimmed) {
@@ -72,6 +96,7 @@ export function checkHouseholdStyle(response: string): HouseholdStyleCheck {
   if (abstractHits.length > 0) {
     reasons.push(`包含抽象词：${abstractHits.join("、")}`);
   }
+  reasons.push(...checkStyleConsistency(trimmed, style));
 
   return {
     pass: reasons.length === 0,

@@ -6,6 +6,7 @@ import {
 import { analyzeConversationState } from "@/lib/elder-agent/conversationStateAnalyzer";
 import { buildMultiturnPrompt } from "@/lib/elder-agent/multiturnPromptBuilder";
 import { resolveAnYuStyle } from "@/lib/elder-agent/styleRouter";
+import { scoreTurnContinuity } from "@/lib/elder-agent/turnContinuityScorer";
 import {
   OpenAIChatUpstreamError,
   createStaticAssistantSseStream,
@@ -212,6 +213,12 @@ export async function POST(req: NextRequest) {
       generatedResponse: result.assistantMessage,
       style,
     });
+    const continuityScore = scoreTurnContinuity({
+      recentTurns,
+      currentMessage: message,
+      assistantResponse: guarded.response,
+      state: conversationState,
+    });
 
     await appendTurn(sessionId, {
       role: "user",
@@ -266,7 +273,13 @@ export async function POST(req: NextRequest) {
             usedRecentTurns: recentTurns.length > 0,
             recentTurnsCount: recentTurns.length,
             detectedThread: conversationState.emotionalThread,
-            caughtPreviousEmotion: conversationState.shouldReferencePreviousTurn,
+            caughtPreviousEmotion: continuityScore.caughtPreviousEmotion,
+            score: continuityScore.score,
+            rubric: {
+              noAbruptTopicShift: continuityScore.noAbruptTopicShift,
+              notOverExplaining: continuityScore.notOverExplaining,
+              reasons: continuityScore.reasons,
+            },
           },
         }),
       },

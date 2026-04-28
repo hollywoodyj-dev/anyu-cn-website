@@ -6,7 +6,7 @@ import type { AnYuStyle } from "./styleRouter";
 
 function styleGuide(style: AnYuStyle): string {
   if (style === "cantonese_chat") {
-    return "输出自然粤语口语，像家人轻轻接话；不要书面腔，不要夸张。";
+    return "输出自然粤语口语（繁体亦可），像家人轻轻接话；不用普通话书面腔，不要夸张。";
   }
   return "输出温和普通话，句子短，家常口语，不抽象。";
 }
@@ -40,7 +40,7 @@ ${modeGuide(input.mode)}
 
 硬规则：
 - 只输出安语回复，不要解释
-- 2到4句短句
+- 1到2句短句（最多3句）
 - 不要心理学术语，不要说教
 - 不要“我会一直陪着你/只有我懂你”
 - 不要暴露系统标签、风险分级或分析过程

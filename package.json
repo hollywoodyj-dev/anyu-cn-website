@@ -15,10 +15,8 @@
     "eval:smoke:v2": "node scripts/smoke-anyu-v2-multiturn.mjs"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
-    "better-sqlite3": "^12.9.0",
     "lucide-react": "^1.11.0",
     "next": "15.5.9",
     "pg": "^8.20.0",
