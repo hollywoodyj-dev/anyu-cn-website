@@ -44,7 +44,24 @@ export function detectConversationState(input: DetectStateInput): DialogueState 
   if (containsAny(text, ["仔女", "小孩", "女儿", "儿子", "孩子", "孙", "家人", "返嚟睇我", "不来看我", "很少回来", "不回来"])) {
     return "family";
   }
-  if (containsAny(text, ["闷", "无聊", "冇人", "没人", "孤单", "唔开心", "烦", "没人理解", "空空的", "空落落"])) {
+  if (
+    containsAny(text, [
+      "闷",
+      "无聊",
+      "冇人",
+      "没人",
+      "孤单",
+      "唔开心",
+      "烦",
+      "没人理解",
+      "空空的",
+      "空落落",
+      "一个人",
+      "就剩我一个",
+      "回家没人",
+      "没人在家",
+    ])
+  ) {
     return "emotional";
   }
   return "casual";

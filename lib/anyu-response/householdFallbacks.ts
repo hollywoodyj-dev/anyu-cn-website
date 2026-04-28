@@ -60,7 +60,13 @@ export function getStateFallbackByStyle(
     }
     if (state === "health") return pick(["身体唔舒服真係辛苦。\n你呢几日有冇同屋企人讲过？", "听到你身体唔太舒服。\n你想唔想先休息下再慢慢讲？"]);
     if (state === "confused") return pick(["我啱啱听得唔太清楚。\n你係想讲身体，定係想讲屋企嘅事？", "我未听得好实。\n你可唔可以再讲慢少少？"]);
-    if (state === "emotional") return pick(["我明，你想有人倾两句。\n你今日最想讲边样？", "呢阵有啲闷都正常。\n你而家最想边个陪你讲下？"]);
+    if (state === "emotional") {
+      return pick([
+        "我明，你想有人倾两句。\n你今日最想讲边样？",
+        "呢阵有啲闷都正常。\n你而家最想边个陪你讲下？",
+        "我听到你而家有点闷住。\n想先讲下今日最难顶嗰阵吗？",
+      ]);
+    }
     return "我喺度听住。\n你慢慢讲就得。";
   }
   if (state === "casual") return pick(["那挺好的。\n今天过得还轻松吗？", "听起来不错。\n今天有没有做点让你舒服的小事？"]);
@@ -68,6 +74,12 @@ export function getStateFallbackByStyle(
   if (state === "family") return pick(["惦记家里人很自然。\n你现在更想见一面，还是先通个电话？", "这份挂念我听到了。\n你想先听听谁的声音？"]);
   if (state === "health") return pick(["身体不舒服确实辛苦。\n你这几天有和家里人说过吗？", "听着确实不太舒服。\n你要不要先说说最明显的是哪一处？"]);
   if (state === "confused") return pick(["我刚刚听得不太清楚。\n你是想说身体不舒服，还是想说家里的事？", "我刚刚没完全听清。\n你可以再慢一点说一次吗？"]);
-  if (state === "emotional") return pick(["嗯，我听到了。\n你今天最想先聊哪件小事？", "我在听。\n你最想先说哪一件让你闷着的事？"]);
+  if (state === "emotional") {
+    return pick([
+      "嗯，我听到了。\n你今天最想先聊哪件小事？",
+      "我在听。\n你最想先说哪一件让你闷着的事？",
+      "我听着呢。\n这会儿你最想先说哪一句？",
+    ]);
+  }
   return "嗯，我在听。\n你慢慢说就好。";
 }

@@ -97,6 +97,10 @@ function requiresReturnQuestion(mode: AnYuMode, riskLevel: "L0" | "L1" | "L2" | 
   return lowRisk && (mode === "emotional_listening" || mode === "supportive_response");
 }
 
+function textSeed(text: string): number {
+  return [...text].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+}
+
 /**
  * POST /api/elder-chat/message — P0（ANYU_Voice_OpenAI_STT_Implementation_Spec §4.2）
  * Step 7：**先** `evaluateRiskText`；L3/L4 **不调 OpenAI**，返回安全引导（JSON 与 SSE 形态一致）。
@@ -215,7 +219,7 @@ export async function POST(req: NextRequest) {
   }
 
   const configuredModel = (process.env.ANYU_OPENAI_CHAT_MODEL ?? "gpt-5.4").trim();
-  const dialogueState = detectConversationState({
+  let dialogueState = detectConversationState({
     text: normalizedInput,
     riskLevel: risk.level,
     asrConfidence: asrConfidenceRaw,
@@ -228,6 +232,18 @@ export async function POST(req: NextRequest) {
     currentMessage: normalizedInput,
     currentRiskLevel: risk.level,
   });
+  if (dialogueState === "casual") {
+    if (conversationState.emotionalThread === "missing_family") {
+      dialogueState = "family";
+    } else if (conversationState.emotionalThread === "health_anxiety") {
+      dialogueState = "health";
+    } else if (
+      conversationState.emotionalThread === "loneliness" ||
+      conversationState.emotionalThread === "fear_of_burden"
+    ) {
+      dialogueState = "emotional";
+    }
+  }
   const indirectSignal = detectIndirectExpression(normalizedInput);
 
   try {
@@ -268,7 +284,8 @@ export async function POST(req: NextRequest) {
       .slice(-5);
     const repeated = repetitionGuard(finalResponse, recentAssistantResponses);
     if (repeated.blocked) {
-      finalResponse = getStateFallbackByStyle(dialogueState, style, turnIndex + recentAssistantResponses.length);
+      const seed = turnIndex + recentAssistantResponses.length + textSeed(normalizedInput);
+      finalResponse = getStateFallbackByStyle(dialogueState, style, seed);
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     }
     const indirectStrategy = !indirectSignal.hasIndirectRestraint
