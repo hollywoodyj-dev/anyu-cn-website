@@ -101,6 +101,20 @@ function textSeed(text: string): number {
   return [...text].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
 }
 
+function pickStateFallbackNoLoop(
+  dialogueState: DialogueState,
+  style: "mandarin_gentle" | "cantonese_chat",
+  baseSeed: number,
+  recentAssistantResponses: string[],
+): string {
+  const attemptSeeds = [baseSeed, baseSeed + 3, baseSeed + 7];
+  for (const seed of attemptSeeds) {
+    const candidate = getStateFallbackByStyle(dialogueState, style, seed);
+    if (!repetitionGuard(candidate, recentAssistantResponses).blocked) return candidate;
+  }
+  return getStateFallbackByStyle(dialogueState, style, baseSeed + 11);
+}
+
 /**
  * POST /api/elder-chat/message — P0（ANYU_Voice_OpenAI_STT_Implementation_Spec §4.2）
  * Step 7：**先** `evaluateRiskText`；L3/L4 **不调 OpenAI**，返回安全引导（JSON 与 SSE 形态一致）。
@@ -285,7 +299,7 @@ export async function POST(req: NextRequest) {
     const repeated = repetitionGuard(finalResponse, recentAssistantResponses);
     if (repeated.blocked) {
       const seed = turnIndex + recentAssistantResponses.length + textSeed(normalizedInput);
-      finalResponse = getStateFallbackByStyle(dialogueState, style, seed);
+      finalResponse = pickStateFallbackNoLoop(dialogueState, style, seed, recentAssistantResponses);
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     }
     const indirectStrategy = !indirectSignal.hasIndirectRestraint

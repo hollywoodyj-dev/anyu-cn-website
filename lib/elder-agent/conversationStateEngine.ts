@@ -41,7 +41,27 @@ export function detectConversationState(input: DetectStateInput): DialogueState 
   if (containsAny(text, ["头痛", "腰痛", "胸口", "头晕", "頭暈", "食唔落", "没胃口", "唔舒服", "不舒服"])) {
     return "health";
   }
-  if (containsAny(text, ["仔女", "小孩", "女儿", "儿子", "孩子", "孙", "家人", "返嚟睇我", "不来看我", "很少回来", "不回来"])) {
+  if (
+    containsAny(text, [
+      "仔女",
+      "小孩",
+      "女儿",
+      "儿子",
+      "孩子",
+      "孙",
+      "家人",
+      "返嚟睇我",
+      "不来看我",
+      "很少回来",
+      "不回来",
+      "打电话",
+      "冇人打电话",
+      "没人打电话",
+      "没有人打电话",
+      "没人联系",
+      "没人问候",
+    ])
+  ) {
     return "family";
   }
   if (
@@ -60,6 +80,10 @@ export function detectConversationState(input: DetectStateInput): DialogueState 
       "就剩我一个",
       "回家没人",
       "没人在家",
+      "没有人",
+      "没人在意我",
+      "没有人在意我",
+      "和你说完心情很不好",
     ])
   ) {
     return "emotional";

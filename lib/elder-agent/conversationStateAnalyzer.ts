@@ -19,11 +19,11 @@ function detectThread(text: string): EmotionalThread {
   if (/麻烦|麻煩|打扰|唔想煩|不想麻烦|怕麻烦|頂住|顶住|扛着|自己扛|不用管我|唔使理我|我都习惯|我都習慣|你们忙|你哋忙/.test(text)) {
     return "fear_of_burden";
   }
-  if (/仔女|儿子|女儿|孩子|家人|佢哋|你哋|掛住|挂住|想佢哋|返嚟|返来|通电话|通電話/.test(text)) {
+  if (/仔女|儿子|女儿|孩子|家人|佢哋|你哋|掛住|挂住|想佢哋|返嚟|返来|通电话|通電話|打电话|打電話|联系|聯絡/.test(text)) {
     return "missing_family";
   }
   if (/痛|累|头晕|頭暈|唔舒服|不舒服|睡|瞓|失眠|唔夠精神/.test(text)) return "health_anxiety";
-  if (/没人|冇人|孤单|孤單|无聊|無聊|静|靜|冷清|闷|悶|空落落|空空地|空空的|找谁说|没人可说|冇人倾|冇人講|同邊個講|想有人陪/.test(text)) {
+  if (/没人|没有人|冇人|孤单|孤單|无聊|無聊|静|靜|冷清|闷|悶|空落落|空空地|空空的|找谁说|没人可说|冇人倾|冇人講|同邊個講|想有人陪|没人在家|就剩我一个|在意我/.test(text)) {
     return "loneliness";
   }
   return "unclear";
