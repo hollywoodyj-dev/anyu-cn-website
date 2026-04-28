@@ -26,6 +26,15 @@ let writeQueue: Promise<void> = Promise.resolve();
 let prismaReady: boolean | null = null;
 
 type SessionStore = Record<string, ConversationTurn[]>;
+type StoredTurnRow = {
+  role: string;
+  content: string;
+  turnIndex: number;
+  mode: string | null;
+  style: string | null;
+  riskLevel: string | null;
+  createdAt: Date;
+};
 
 async function readStoreFromDisk(): Promise<SessionStore> {
   try {
@@ -93,7 +102,7 @@ export async function getRecentTurns(
         orderBy: { createdAt: "desc" },
         take: n,
       });
-      return rows
+      return (rows as StoredTurnRow[])
         .slice()
         .reverse()
         .map((r) => ({
