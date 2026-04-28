@@ -1,9 +1,10 @@
-import { getHouseholdFallback } from "./householdFallbacks";
+import { getHouseholdFallbackByStyle } from "./householdFallbacks";
 import { checkHouseholdStyle } from "./householdStyle";
 
 export function guardAnYuResponse(input: {
   elderMessage: string;
   generatedResponse: string;
+  style?: "mandarin_gentle" | "cantonese_chat";
 }) {
   const check = checkHouseholdStyle(input.generatedResponse);
 
@@ -16,7 +17,7 @@ export function guardAnYuResponse(input: {
   }
 
   return {
-    response: getHouseholdFallback(input.elderMessage),
+    response: getHouseholdFallbackByStyle(input.elderMessage, input.style),
     passed: false,
     reasons: check.reasons,
   };

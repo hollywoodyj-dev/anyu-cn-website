@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ElderChatSession {
+  id        String          @id
+  locale    String          @default("zh")
+  style     String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  turns     ElderChatTurn[]
+}
+
+model ElderChatTurn {
+  id        String           @id @default(cuid())
+  sessionId String
+  session   ElderChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  turnIndex Int
+  mode      String?
+  style     String?
+  riskLevel String?
+  createdAt DateTime         @default(now())
+
+  @@index([sessionId, createdAt])
+}

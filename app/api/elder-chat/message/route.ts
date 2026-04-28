@@ -1,12 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  appendTurn,
+  getRecentTurns,
+} from "@/lib/elder-agent/conversationContext";
+import { analyzeConversationState } from "@/lib/elder-agent/conversationStateAnalyzer";
+import { buildMultiturnPrompt } from "@/lib/elder-agent/multiturnPromptBuilder";
+import { resolveAnYuStyle } from "@/lib/elder-agent/styleRouter";
+import {
   OpenAIChatUpstreamError,
   createStaticAssistantSseStream,
   runElderChatTurn,
   safeAssistantFallback,
 } from "@/lib/anyu/openai-chat";
 import { getPromptVersion } from "@/lib/anyu/prompts";
-import { buildHouseholdResponsePrompt } from "@/lib/anyu-response/householdResponsePrompt";
 import { guardAnYuResponse } from "@/lib/anyu-response/responseGuard";
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import { getRiskBlockedAssistantMessage, isRiskChatBlocked } from "@/lib/anyu/risk/blocked-reply";
@@ -20,6 +26,7 @@ type Body = {
   session_id?: unknown;
   message?: unknown;
   lang?: unknown;
+  style?: unknown;
   /** `true` 时返回 SSE（与 `Accept: text/event-stream` 二选一或同时用） */
   stream?: unknown;
   turn_index?: unknown;
@@ -95,6 +102,12 @@ export async function POST(req: NextRequest) {
   const conversationId = sessionId ?? crypto.randomUUID();
   const sse = wantsSse(req, body);
   const turnIndex = resolveTurnIndex(sessionId, body.turn_index);
+  const style = resolveAnYuStyle({
+    explicitStyle: body.style,
+    lang,
+    message,
+  });
+  const recentTurns = await getRecentTurns(sessionId);
 
   const risk = evaluateRiskText({
     text: message,
@@ -108,6 +121,22 @@ export async function POST(req: NextRequest) {
 
   if (isRiskChatBlocked(risk.level)) {
     const assistantMessage = getRiskBlockedAssistantMessage(risk.level);
+    await appendTurn(sessionId, {
+      role: "user",
+      content: message,
+      turnIndex,
+      riskLevel: risk.level,
+      style,
+      mode: risk.level === "L4" ? "urgent_alert" : "safety_risk",
+    });
+    await appendTurn(sessionId, {
+      role: "assistant",
+      content: assistantMessage,
+      turnIndex,
+      riskLevel: risk.level,
+      style,
+      mode: risk.level === "L4" ? "urgent_alert" : "safety_risk",
+    });
 
     if (sse) {
       const stream = createStaticAssistantSseStream({
@@ -136,10 +165,17 @@ export async function POST(req: NextRequest) {
         ...baseMeta(turnId, lang, RISK_GATE_MODEL, {
           risk: riskPayload,
           chat_invoked: false,
-            household_style_passed: true,
-            household_style_reasons: [],
-            mode: risk.level === "L4" ? "urgent_alert" : "safety_risk",
-            turn_index: turnIndex,
+          household_style_passed: true,
+          household_style_reasons: [],
+          mode: risk.level === "L4" ? "urgent_alert" : "safety_risk",
+          turn_index: turnIndex,
+          style,
+          continuity: {
+            usedRecentTurns: recentTurns.length > 0,
+            recentTurnsCount: recentTurns.length,
+            detectedThread: "unclear",
+            caughtPreviousEmotion: false,
+          },
         }),
       },
     });
@@ -154,18 +190,44 @@ export async function POST(req: NextRequest) {
 
   const configuredModel = (process.env.ANYU_OPENAI_CHAT_MODEL ?? "gpt-5.4").trim();
   const mode = routeMode(message);
+  const conversationState = analyzeConversationState({
+    recentTurns,
+    currentMessage: message,
+    currentRiskLevel: risk.level,
+  });
 
   try {
-    const prompt = buildHouseholdResponsePrompt({
-      elderMessage: message,
+    const prompt = buildMultiturnPrompt({
+      currentMessage: message,
       mode,
       riskLevel: risk.level,
+      style,
+      recentTurns,
+      conversationState,
       turnIndex,
     });
     const result = await runElderChatTurn({ userMessage: prompt, turnId });
     const guarded = guardAnYuResponse({
       elderMessage: message,
       generatedResponse: result.assistantMessage,
+      style,
+    });
+
+    await appendTurn(sessionId, {
+      role: "user",
+      content: message,
+      turnIndex,
+      riskLevel: risk.level,
+      style,
+      mode,
+    });
+    await appendTurn(sessionId, {
+      role: "assistant",
+      content: guarded.response,
+      turnIndex,
+      riskLevel: risk.level,
+      style,
+      mode,
     });
 
     if (sse) {
@@ -199,6 +261,13 @@ export async function POST(req: NextRequest) {
           household_style_reasons: guarded.reasons,
           mode,
           turn_index: turnIndex,
+          style,
+          continuity: {
+            usedRecentTurns: recentTurns.length > 0,
+            recentTurnsCount: recentTurns.length,
+            detectedThread: conversationState.emotionalThread,
+            caughtPreviousEmotion: conversationState.shouldReferencePreviousTurn,
+          },
         }),
       },
     });

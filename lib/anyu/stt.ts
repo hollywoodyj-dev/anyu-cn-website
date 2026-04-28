@@ -177,8 +177,15 @@ async function transcribeViaBridge(
       );
     }
     const text = parseBridgeText(json);
+    // 200 + 空转写：多为静音/不可解码片段，交给上游按空串处理，避免误报 502
     if (!text) {
-      throw new SttUpstreamError("Empty transcription text from bridge STT", res.status);
+      return {
+        text: "",
+        provider: "bridge",
+        model: undefined,
+        language: undefined,
+        durationSeconds: undefined,
+      };
     }
     const j = (json ?? {}) as { language?: unknown; model?: unknown; duration?: unknown };
     return {

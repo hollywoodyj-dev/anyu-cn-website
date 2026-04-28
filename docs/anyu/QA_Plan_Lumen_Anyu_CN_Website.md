@@ -29,6 +29,8 @@ Use the **Vercel URL** for sections **1–3** (browser). Use the **same origin**
 | Env (API QA only) | `.env.local` or Vercel: `OPENAI_API_KEY` set; `ANYU_OPENAI_CHAT_MODEL` as agreed (e.g. `gpt-5.4`). |
 | Base URL | **`https://anyu-cn-website.vercel.app`** — 中文首页入口：[https://anyu-cn-website.vercel.app/cn](https://anyu-cn-website.vercel.app/cn). |
 
+**Wisewave V2 multiturn（可选回归）:** `npm run eval:validate:v2`（数据：`docs/anyu/eval/anyu_dialogue_multiturn_v2_batch1_030.jsonl`）；本机已起服务时 `npm run eval:smoke:v2`。Fail：校验脚本报错，或 smoke 非 200 / 无 `assistant_message`。
+
 ---
 
 ## 1. Marketing site — routes & smoke
