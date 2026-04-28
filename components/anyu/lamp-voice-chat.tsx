@@ -21,10 +21,12 @@ function uid() {
 }
 
 export function LampVoiceChat() {
+  const [mode, setMode] = useState<"voice" | "text">("voice");
   const [isCallActive, setIsCallActive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<ChatItem[]>([]);
+  const [textInput, setTextInput] = useState("");
   const [sessionId] = useState(() => crypto.randomUUID());
 
   const bridgeRef = useRef<MediaRecorderBridgeSession | null>(null);
@@ -101,6 +103,30 @@ export function LampVoiceChat() {
     }
   }
 
+  async function switchMode(nextMode: "voice" | "text") {
+    if (nextMode === mode) return;
+    if (isCallActive) {
+      await stopCall();
+    }
+    setError(null);
+    setMode(nextMode);
+  }
+
+  async function sendTextTurn() {
+    const text = textInput.trim();
+    if (!text || busy) return;
+    setError(null);
+    append("user", text);
+    setTextInput("");
+    try {
+      const reply = await chatTurn(text);
+      append("assistant", reply);
+    } catch (e: unknown) {
+      const msg = (e as { message?: string })?.message ?? "发送失败，请稍后重试。";
+      setError(msg);
+    }
+  }
+
   useEffect(() => {
     return () => {
       void bridgeRef.current?.stop();
@@ -113,9 +139,30 @@ export function LampVoiceChat() {
       <header className="space-y-3 text-center">
         <h1 className="text-2xl font-medium text-[var(--anyu-ink)] md:text-3xl">安语灯语音体验</h1>
         <p className="text-[var(--anyu-ink-muted)]">
-          点击开始进入通话模式。说完一句后稍停，系统会转写、回复并播报；说很长也不会超过约半分钟一段。
+          可切换通话模式或文字模式。文字模式可直接验证对话逻辑，不依赖麦克风与 STT。
         </p>
       </header>
+
+      <div className="mx-auto flex w-full max-w-md rounded-2xl border border-[var(--anyu-border)] bg-white p-1">
+        <button
+          type="button"
+          onClick={() => void switchMode("voice")}
+          className={`flex-1 rounded-xl px-4 py-2 text-sm ${
+            mode === "voice" ? "bg-[#F6EDE5] text-[var(--anyu-ink)]" : "text-[var(--anyu-ink-muted)]"
+          }`}
+        >
+          通话模式
+        </button>
+        <button
+          type="button"
+          onClick={() => void switchMode("text")}
+          className={`flex-1 rounded-xl px-4 py-2 text-sm ${
+            mode === "text" ? "bg-[#EEF4EC] text-[var(--anyu-ink)]" : "text-[var(--anyu-ink-muted)]"
+          }`}
+        >
+          文字模式
+        </button>
+      </div>
 
       <section className="grid gap-6 md:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-3xl border border-[var(--anyu-border)] bg-[var(--anyu-bg-card)] p-6">
@@ -132,21 +179,29 @@ export function LampVoiceChat() {
           </div>
 
           <div className="mt-4 space-y-3">
-            <button
-              type="button"
-              onClick={() => void (isCallActive ? stopCall() : startCall())}
-              disabled={busy && !isCallActive}
-              className="w-full rounded-2xl bg-[#9D6A4D] px-5 py-3 text-white transition hover:bg-[#8a5d43] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isCallActive ? "结束通话模式" : "开始通话模式"}
-            </button>
-            {isCallActive ? (
-              <p className="text-center text-sm text-[#b85858]">
-                {busy ? "安语正在回复…" : "正在聆听中…"}
-              </p>
+            {mode === "voice" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void (isCallActive ? stopCall() : startCall())}
+                  disabled={busy && !isCallActive}
+                  className="w-full rounded-2xl bg-[#9D6A4D] px-5 py-3 text-white transition hover:bg-[#8a5d43] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isCallActive ? "结束通话模式" : "开始通话模式"}
+                </button>
+                {isCallActive ? (
+                  <p className="text-center text-sm text-[#b85858]">
+                    {busy ? "安语正在回复…" : "正在聆听中…"}
+                  </p>
+                ) : (
+                  <p className="text-center text-sm text-[var(--anyu-ink-muted)]">
+                    建议使用 Chrome，并允许麦克风权限。
+                  </p>
+                )}
+              </>
             ) : (
               <p className="text-center text-sm text-[var(--anyu-ink-muted)]">
-                建议使用 Chrome，并允许麦克风权限。
+                当前为文字模式：可直接输入并验证安语对话逻辑。
               </p>
             )}
           </div>
@@ -154,10 +209,35 @@ export function LampVoiceChat() {
 
         <div className="rounded-3xl border border-[var(--anyu-border)] bg-white p-5 md:p-6">
           <h2 className="mb-4 text-lg font-medium text-[var(--anyu-ink)]">对话记录</h2>
+          {mode === "text" ? (
+            <div className="mb-4 flex gap-2">
+              <input
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void sendTextTurn();
+                  }
+                }}
+                placeholder="输入你想说的话，按 Enter 发送"
+                className="flex-1 rounded-xl border border-[var(--anyu-border)] px-3 py-2 text-sm outline-none focus:border-[#9D6A4D]"
+                disabled={busy}
+              />
+              <button
+                type="button"
+                onClick={() => void sendTextTurn()}
+                disabled={busy || !textInput.trim()}
+                className="rounded-xl bg-[#9D6A4D] px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy ? "发送中…" : "发送"}
+              </button>
+            </div>
+          ) : null}
           <div className="max-h-[420px] space-y-3 overflow-auto pr-1">
             {items.length === 0 ? (
               <p className="rounded-2xl bg-[var(--anyu-bg-card)] p-4 text-sm text-[var(--anyu-ink-muted)]">
-                还没有对话。点击左侧按钮开始。
+                还没有对话。请开始通话，或切换到文字模式发送第一句。
               </p>
             ) : null}
             {items.map((item) => (
