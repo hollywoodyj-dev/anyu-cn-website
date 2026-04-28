@@ -9,6 +9,7 @@ This folder contains Wisewave-provided training sets in machine-readable JSONL.
 - `anyu_household_response_batch2_051_100.jsonl`
 - `anyu_continuous_dialogue_3turn_batch1.jsonl`
 - `anyu_dialogue_multiturn_v2_batch1_030.jsonl`（Wisewave V2，见下节）
+- `anyu_dialogue_multiturn_v2_mandarin_020.jsonl`（Wisewave 普通话 V2 第1批）
 
 ## Notes
 
