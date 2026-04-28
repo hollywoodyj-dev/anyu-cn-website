@@ -106,13 +106,17 @@ function pickStateFallbackNoLoop(
   style: "mandarin_gentle" | "cantonese_chat",
   baseSeed: number,
   recentAssistantResponses: string[],
+  contextText: string,
 ): string {
   const attemptSeeds = [baseSeed, baseSeed + 3, baseSeed + 7];
   for (const seed of attemptSeeds) {
-    const candidate = getStateFallbackByStyle(dialogueState, style, seed);
+    const candidate = getStateFallbackByStyle(dialogueState, style, seed, contextText);
     if (!repetitionGuard(candidate, recentAssistantResponses).blocked) return candidate;
   }
-  return getStateFallbackByStyle(dialogueState, style, baseSeed + 11);
+  if (style === "cantonese_chat") {
+    return "我听到你呢句更重。\n你想先讲下，啱啱边下最难顶？";
+  }
+  return "我听到你这句更重了。\n你想先把最难受的那一下说出来吗？";
 }
 
 /**
@@ -151,6 +155,9 @@ export async function POST(req: NextRequest) {
     message,
   });
   const recentTurns = await getRecentTurns(sessionId);
+  const recentHighRiskUserTurn = [...recentTurns]
+    .reverse()
+    .find((t) => t.role === "user" && (t.riskLevel === "L3" || t.riskLevel === "L4"));
   const asrConfidenceRaw = typeof body.asr_confidence === "number" ? body.asr_confidence : null;
 
   const risk = evaluateRiskText({
@@ -258,6 +265,14 @@ export async function POST(req: NextRequest) {
       dialogueState = "emotional";
     }
   }
+  const hasRecentRiskCarryover = Boolean(recentHighRiskUserTurn);
+  if (
+    hasRecentRiskCarryover &&
+    dialogueState === "casual" &&
+    /没人|冇人|一个人|就剩我|不想活|撑不住|顶不住|頂唔順|好难受|很难受/.test(normalizedInput)
+  ) {
+    dialogueState = "emotional";
+  }
   const indirectSignal = detectIndirectExpression(normalizedInput);
 
   try {
@@ -299,7 +314,13 @@ export async function POST(req: NextRequest) {
     const repeated = repetitionGuard(finalResponse, recentAssistantResponses);
     if (repeated.blocked) {
       const seed = turnIndex + recentAssistantResponses.length + textSeed(normalizedInput);
-      finalResponse = pickStateFallbackNoLoop(dialogueState, style, seed, recentAssistantResponses);
+      finalResponse = pickStateFallbackNoLoop(
+        dialogueState,
+        style,
+        seed,
+        recentAssistantResponses,
+        normalizedInput,
+      );
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     }
     const indirectStrategy = !indirectSignal.hasIndirectRestraint
@@ -377,6 +398,7 @@ export async function POST(req: NextRequest) {
             templateId: indirectSignal.hasIndirectRestraint ? "indirect_path" : "model_path",
             response: finalResponse,
             repetitionBlocked: repeated.blocked,
+            recentRiskCarryover: hasRecentRiskCarryover,
             qaResult: finalStyleCheck.pass ? "pass" : "fallback_used",
             failureReason: repeated.reason ?? (finalStyleCheck.pass ? null : "style_guard"),
           },

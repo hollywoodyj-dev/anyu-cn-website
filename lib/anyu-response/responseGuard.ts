@@ -31,7 +31,7 @@ export function guardAnYuResponse(input: {
 
   return {
     response: input.dialogueState
-      ? getStateFallbackByStyle(input.dialogueState, input.style)
+      ? getStateFallbackByStyle(input.dialogueState, input.style, 0, input.elderMessage)
       : getHouseholdFallbackByStyle(input.elderMessage, input.style),
     passed: false,
     reasons: check.reasons,

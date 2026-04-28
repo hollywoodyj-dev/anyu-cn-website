@@ -50,8 +50,10 @@ export function getStateFallbackByStyle(
   state: DialogueState,
   style?: "mandarin_gentle" | "cantonese_chat",
   seed = 0,
+  contextText = "",
 ): string {
   const pick = (arr: string[]) => arr[Math.abs(seed) % arr.length];
+  const ctx = contextText.trim();
   if (style === "cantonese_chat") {
     if (state === "casual") return pick(["几好啊。\n你今日过得顺唔顺？", "听落几轻松。\n今日有冇出去行下？"]);
     if (state === "story") return pick(["好啊，我听住。\n你想由以前边段开始讲？", "好，我慢慢听。\n你想先讲当年边件事？"]);
@@ -61,6 +63,15 @@ export function getStateFallbackByStyle(
     if (state === "health") return pick(["身体唔舒服真係辛苦。\n你呢几日有冇同屋企人讲过？", "听到你身体唔太舒服。\n你想唔想先休息下再慢慢讲？"]);
     if (state === "confused") return pick(["我啱啱听得唔太清楚。\n你係想讲身体，定係想讲屋企嘅事？", "我未听得好实。\n你可唔可以再讲慢少少？"]);
     if (state === "emotional") {
+      if (/生氣|生气|頂唔順|顶唔顺|好嬲|好怒/.test(ctx)) {
+        return "听到你而家真係有啲火。\n你想先讲下，啱啱边句最顶住你？";
+      }
+      if (/冇人|没人|一个人|自己/.test(ctx)) {
+        return pick([
+          "屋企得返自己，真係会闷住。\n你而家最想有人同你讲边句？",
+          "听到你讲到得返自己一个。\n你想唔想先讲下，今晚最难顶嗰阵？",
+        ]);
+      }
       return pick([
         "我明，你想有人倾两句。\n你今日最想讲边样？",
         "呢阵有啲闷都正常。\n你而家最想边个陪你讲下？",
@@ -75,6 +86,15 @@ export function getStateFallbackByStyle(
   if (state === "health") return pick(["身体不舒服确实辛苦。\n你这几天有和家里人说过吗？", "听着确实不太舒服。\n你要不要先说说最明显的是哪一处？"]);
   if (state === "confused") return pick(["我刚刚听得不太清楚。\n你是想说身体不舒服，还是想说家里的事？", "我刚刚没完全听清。\n你可以再慢一点说一次吗？"]);
   if (state === "emotional") {
+    if (/生气|火大|烦死|受不了/.test(ctx)) {
+      return "我听到你这会儿是真有火气。\n你想先把最卡的那一句说出来吗？";
+    }
+    if (/没人|一个人|没人在家|就剩我/.test(ctx)) {
+      return pick([
+        "一个人在家，心里会更空一些。\n这会儿你最想先说哪一句？",
+        "听到你说家里只剩自己。\n你最想有人回你哪句话？",
+      ]);
+    }
     return pick([
       "嗯，我听到了。\n你今天最想先聊哪件小事？",
       "我在听。\n你最想先说哪一件让你闷着的事？",
