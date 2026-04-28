@@ -10,10 +10,18 @@ const indirectPhrases = [
   "不用理我",
   "我都习惯了",
   "我都習慣",
+  "我都惯咗",
+  "我都慣咗",
   "没关系",
   "冇所谓",
   "你们忙",
   "你哋忙",
+  "自己顶住",
+  "自己頂住",
+  "我自己顶住",
+  "我自己頂住",
+  "顶住就得",
+  "頂住就得",
 ];
 
 export function detectIndirectExpression(text: string): IndirectExpressionSignal {
