@@ -34,7 +34,7 @@ export function getHouseholdFallbackByStyle(message: string, style?: "mandarin_g
   if (message.includes("麻烦") || message.includes("麻煩")) {
     return "你係唔想麻烦佢哋。\n你会唔会想轻轻问候一句？";
   }
-  return "你呢句话，我听得出有啲顶住。\n你而家最想讲边样先？";
+  return "你呢句說話，我聽得出你有啲頂住。\n你而家想講邊樣先？";
 }
 
 export function getIndirectFallbackByStyle(style?: "mandarin_gentle" | "cantonese_chat") {

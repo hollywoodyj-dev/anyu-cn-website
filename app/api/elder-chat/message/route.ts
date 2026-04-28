@@ -16,6 +16,7 @@ import {
 } from "@/lib/anyu/openai-chat";
 import { getPromptVersion } from "@/lib/anyu/prompts";
 import { getIndirectFallbackByStyle } from "@/lib/anyu-response/householdFallbacks";
+import { checkHouseholdStyle } from "@/lib/anyu-response/householdStyle";
 import { guardAnYuResponse } from "@/lib/anyu-response/responseGuard";
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import { getRiskBlockedAssistantMessage, isRiskChatBlocked } from "@/lib/anyu/risk/blocked-reply";
@@ -74,6 +75,11 @@ function resolveTurnIndex(sessionId: string | null, rawTurnIndex: unknown): numb
     return next;
   }
   return 1;
+}
+
+function requiresReturnQuestion(mode: AnYuMode, riskLevel: "L0" | "L1" | "L2" | "L3" | "L4"): boolean {
+  const lowRisk = riskLevel === "L0" || riskLevel === "L1" || riskLevel === "L2";
+  return lowRisk && (mode === "emotional_listening" || mode === "supportive_response");
 }
 
 /**
@@ -219,11 +225,17 @@ export async function POST(req: NextRequest) {
       mode,
       riskLevel: risk.level,
     });
-    const directIndirectHandled = /(忍着|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(
+    const directIndirectHandled = /(忍着|頂住|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(
       guarded.response,
     );
+    const requireQuestion = requiresReturnQuestion(mode, risk.level);
     const indirectHandledText = directIndirectHandled ? guarded.response : getIndirectFallbackByStyle(style);
-    const finalResponse = indirectSignal.hasIndirectRestraint ? indirectHandledText : guarded.response;
+    let finalResponse = indirectSignal.hasIndirectRestraint ? indirectHandledText : guarded.response;
+    let finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    if (indirectSignal.hasIndirectRestraint && !finalStyleCheck.pass) {
+      finalResponse = getIndirectFallbackByStyle(style);
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    }
     const indirectStrategy = !indirectSignal.hasIndirectRestraint
       ? "none"
       : directIndirectHandled
@@ -281,8 +293,8 @@ export async function POST(req: NextRequest) {
         ...baseMeta(turnId, lang, result.model, {
           risk: riskPayload,
           chat_invoked: true,
-          household_style_passed: guarded.passed,
-          household_style_reasons: guarded.reasons,
+          household_style_passed: finalStyleCheck.pass,
+          household_style_reasons: finalStyleCheck.reasons,
           mode,
           turn_index: turnIndex,
           style,
