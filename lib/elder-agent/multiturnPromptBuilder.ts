@@ -2,6 +2,7 @@ import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import type { RiskLevel } from "@/lib/anyu/risk/evaluate";
 import type { ConversationTurn } from "./conversationContext";
 import type { ConversationState } from "./conversationStateAnalyzer";
+import type { IndirectExpressionSignal } from "./indirectExpression";
 import type { AnYuStyle } from "./styleRouter";
 
 function styleGuide(style: AnYuStyle): string {
@@ -31,6 +32,7 @@ export function buildMultiturnPrompt(input: {
   currentMessage: string;
   recentTurns: ConversationTurn[];
   conversationState: ConversationState;
+  indirectSignal: IndirectExpressionSignal;
   turnIndex: number;
 }): string {
   return `
@@ -45,6 +47,7 @@ ${modeGuide(input.mode)}
 - 不要“我会一直陪着你/只有我懂你”
 - 不要暴露系统标签、风险分级或分析过程
 - 安全优先：如有高风险迹象，宁可更保守
+- 若用户是含蓄表达（如“不用管我/我都习惯了”），不要按字面结束对话，要轻轻接住并给一个低压回球
 
 当前信息：
 - 风险等级：${input.riskLevel}
@@ -52,6 +55,8 @@ ${modeGuide(input.mode)}
 - turn_index：${input.turnIndex}
 - 连续性：${input.conversationState.continuityType}
 - 情绪线索：${input.conversationState.emotionalThread}
+- 含蓄表达：${input.indirectSignal.hasIndirectRestraint ? "是" : "否"}
+- 含蓄命中：${input.indirectSignal.matchedPhrases.join(" / ") || "无"}
 
 最近对话（按时间）：
 ${formatRecentTurns(input.recentTurns)}

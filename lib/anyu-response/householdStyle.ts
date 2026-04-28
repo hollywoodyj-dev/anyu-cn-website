@@ -43,6 +43,13 @@ const abstractWords = [
   "情绪机制",
 ];
 
+const overusedClosingPhrases = [
+  "先静一小会儿",
+  "慢慢来",
+  "先坐一阵",
+  "先坐一会",
+];
+
 function checkStyleConsistency(response: string, style?: AnYuStyle): string[] {
   if (!style) return [];
   const reasons: string[] = [];
@@ -65,7 +72,11 @@ function checkStyleConsistency(response: string, style?: AnYuStyle): string[] {
   return reasons;
 }
 
-export function checkHouseholdStyle(response: string, style?: AnYuStyle): HouseholdStyleCheck {
+export function checkHouseholdStyle(
+  response: string,
+  style?: AnYuStyle,
+  opts?: { requireQuestion?: boolean },
+): HouseholdStyleCheck {
   const reasons: string[] = [];
   const trimmed = response.trim();
   if (!trimmed) {
@@ -76,6 +87,14 @@ export function checkHouseholdStyle(response: string, style?: AnYuStyle): Househ
     .split(/[。！？!?]/)
     .map((s) => s.trim())
     .filter(Boolean);
+
+  const questionCount = (trimmed.match(/[？?]/g) ?? []).length;
+  if (questionCount > 1) {
+    reasons.push("提问超过1个");
+  }
+  if (opts?.requireQuestion && questionCount < 1) {
+    reasons.push("缺少回球问题");
+  }
 
   if (sentences.length > 2) {
     reasons.push("回应超过2句");
@@ -95,6 +114,10 @@ export function checkHouseholdStyle(response: string, style?: AnYuStyle): Househ
   const abstractHits = abstractWords.filter((w) => trimmed.includes(w));
   if (abstractHits.length > 0) {
     reasons.push(`包含抽象词：${abstractHits.join("、")}`);
+  }
+  const overusedHits = overusedClosingPhrases.filter((w) => trimmed.includes(w));
+  if (overusedHits.length > 0) {
+    reasons.push(`包含高频收尾语：${overusedHits.join("、")}`);
   }
   reasons.push(...checkStyleConsistency(trimmed, style));
 
