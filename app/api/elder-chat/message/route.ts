@@ -4,6 +4,7 @@ import {
   getRecentTurns,
 } from "@/lib/elder-agent/conversationContext";
 import { analyzeConversationState } from "@/lib/elder-agent/conversationStateAnalyzer";
+import { detectIndirectExpression } from "@/lib/elder-agent/indirectExpression";
 import { buildMultiturnPrompt } from "@/lib/elder-agent/multiturnPromptBuilder";
 import { resolveAnYuStyle } from "@/lib/elder-agent/styleRouter";
 import { scoreTurnContinuity } from "@/lib/elder-agent/turnContinuityScorer";
@@ -14,6 +15,7 @@ import {
   safeAssistantFallback,
 } from "@/lib/anyu/openai-chat";
 import { getPromptVersion } from "@/lib/anyu/prompts";
+import { getIndirectFallbackByStyle } from "@/lib/anyu-response/householdFallbacks";
 import { guardAnYuResponse } from "@/lib/anyu-response/responseGuard";
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import { getRiskBlockedAssistantMessage, isRiskChatBlocked } from "@/lib/anyu/risk/blocked-reply";
@@ -196,6 +198,7 @@ export async function POST(req: NextRequest) {
     currentMessage: message,
     currentRiskLevel: risk.level,
   });
+  const indirectSignal = detectIndirectExpression(message);
 
   try {
     const prompt = buildMultiturnPrompt({
@@ -205,6 +208,7 @@ export async function POST(req: NextRequest) {
       style,
       recentTurns,
       conversationState,
+      indirectSignal,
       turnIndex,
     });
     const result = await runElderChatTurn({ userMessage: prompt, turnId });
@@ -212,11 +216,24 @@ export async function POST(req: NextRequest) {
       elderMessage: message,
       generatedResponse: result.assistantMessage,
       style,
+      mode,
+      riskLevel: risk.level,
     });
+    const directIndirectHandled = /(忍着|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(
+      guarded.response,
+    );
+    const indirectHandledText = directIndirectHandled ? guarded.response : getIndirectFallbackByStyle(style);
+    const finalResponse = indirectSignal.hasIndirectRestraint ? indirectHandledText : guarded.response;
+    const indirectStrategy = !indirectSignal.hasIndirectRestraint
+      ? "none"
+      : directIndirectHandled
+        ? "model"
+        : "fallback";
+    const indirectHandled = !indirectSignal.hasIndirectRestraint || indirectStrategy !== "none";
     const continuityScore = scoreTurnContinuity({
       recentTurns,
       currentMessage: message,
-      assistantResponse: guarded.response,
+      assistantResponse: finalResponse,
       state: conversationState,
     });
 
@@ -230,7 +247,7 @@ export async function POST(req: NextRequest) {
     });
     await appendTurn(sessionId, {
       role: "assistant",
-      content: guarded.response,
+      content: finalResponse,
       turnIndex,
       riskLevel: risk.level,
       style,
@@ -244,7 +261,7 @@ export async function POST(req: NextRequest) {
         lang,
         modelLabel: result.model,
         prompt_version: getPromptVersion(),
-        assistantText: guarded.response,
+        assistantText: finalResponse,
         risk: riskPayload,
       });
       return new Response(stream, {
@@ -258,7 +275,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      assistant_message: guarded.response,
+      assistant_message: finalResponse,
       conversation_id: conversationId,
       meta: {
         ...baseMeta(turnId, lang, result.model, {
@@ -280,6 +297,12 @@ export async function POST(req: NextRequest) {
               notOverExplaining: continuityScore.notOverExplaining,
               reasons: continuityScore.reasons,
             },
+          },
+          indirect_expression: {
+            detected: indirectSignal.hasIndirectRestraint,
+            matched: indirectSignal.matchedPhrases,
+            handled: indirectHandled,
+            strategy: indirectStrategy,
           },
         }),
       },
