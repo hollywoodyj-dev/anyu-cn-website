@@ -9,6 +9,12 @@ import {
   type ActiveThread,
 } from "@/lib/elder-agent/activeThread";
 import {
+  buildFamilyMessageSuggestion,
+  extractFamilySlots,
+  hasFilledFamilyIntent,
+  repeatedPreferenceQuestion,
+} from "@/lib/elder-agent/familyProgression";
+import {
   detectConversationState,
   normalizeInputText,
   type DialogueState,
@@ -272,7 +278,7 @@ export async function POST(req: NextRequest) {
   });
   const mode = routeMode(message);
   const stateDrivenMode = modeFromState(dialogueState);
-  const finalMode = mode === "communication_reframe" ? mode : stateDrivenMode;
+  let finalMode: AnYuMode = mode === "communication_reframe" ? mode : stateDrivenMode;
   const conversationState = analyzeConversationState({
     recentTurns,
     currentMessage: normalizedInput,
@@ -280,6 +286,14 @@ export async function POST(req: NextRequest) {
   });
   const activeThread: ActiveThread = buildActiveThread(recentTurns, normalizedInput);
   const currentAnchors = extractCurrentAnchors(normalizedInput);
+  const familySlots = extractFamilySlots(recentTurns, normalizedInput);
+  const familyIntentReady = hasFilledFamilyIntent(familySlots);
+  const familyLooping = repeatedPreferenceQuestion(recentTurns);
+  const progressionToMessageBuilder =
+    (activeThread.topic === "family" && familyIntentReady) || (activeThread.topic === "family" && familyLooping);
+  if (progressionToMessageBuilder) {
+    finalMode = "family_message";
+  }
   if (dialogueState === "casual") {
     if (conversationState.emotionalThread === "missing_family") {
       dialogueState = "family";
@@ -360,6 +374,10 @@ export async function POST(req: NextRequest) {
       const seed = turnIndex + textSeed(normalizedInput);
       finalResponse = getV5StateResponseByStyle(dialogueState, style, normalizedInput, seed);
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    }
+    if (progressionToMessageBuilder) {
+      finalResponse = buildFamilyMessageSuggestion(familySlots, style);
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion: false });
     }
     let continuityCheck = continuityGuard({
       response: finalResponse,
@@ -453,6 +471,10 @@ export async function POST(req: NextRequest) {
             response: finalResponse,
             repetitionBlocked: repeated.blocked,
             recentRiskCarryover: hasRecentRiskCarryover,
+            familySlots,
+            familyIntentReady,
+            familyLooping,
+            progressionToMessageBuilder,
             v5Corrected: v5CorrectionNeeded,
             continuityGuard: continuityCheck,
             qaResult: finalStyleCheck.pass ? "pass" : "fallback_used",
