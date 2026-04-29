@@ -6,6 +6,7 @@ import type { ConversationTurn } from "./conversationContext";
 import type { ConversationState } from "./conversationStateAnalyzer";
 import type { IndirectExpressionSignal } from "./indirectExpression";
 import type { AnYuStyle } from "./styleRouter";
+import type { PendingTaskState } from "./v6/pendingTask";
 
 function styleGuide(style: AnYuStyle): string {
   if (style === "cantonese_chat") {
@@ -37,6 +38,52 @@ function formatLastThreeTurns(turns: ConversationTurn[]): string {
   return last3.map((t) => `${t.role === "user" ? "老人" : "安语"}：${t.content}`).join("\n");
 }
 
+function formatLastSixTurns(turns: ConversationTurn[]): string {
+  const last6 = turns.slice(-6);
+  if (!last6.length) return "（无）";
+  return last6.map((t) => `${t.role === "user" ? "老人" : "安语"}：${t.content}`).join("\n");
+}
+
+function v6CriticalBlock(input: {
+  pending: PendingTaskState | null;
+  blockedPhrases: string[];
+  assistantTurnCount: number;
+  recentTurns: ConversationTurn[];
+}): string {
+  const pendingLine = input.pending
+    ? JSON.stringify(
+        { type: input.pending.type, status: input.pending.status, topic: input.pending.topic ?? null },
+        null,
+        0,
+      )
+    : "none";
+  const blocked =
+    input.blockedPhrases.length > 0
+      ? input.blockedPhrases.map((s) => s.replace(/\s+/g, " ").slice(0, 80)).join(" | ")
+      : "（无）";
+  const firstAssistantOnly = input.assistantTurnCount === 0;
+  const greetingRule = firstAssistantOnly
+    ? "首轮可以简单问好。"
+    : "对话已开始：禁止突然回到开场寒暄模版（如「今天过得还轻松吗」「今天有没有什么特别」「见到你就好」等），除非用户主动聊起当天心情。";
+
+  return `
+【V6 · 上下文与任务绑定 — 必须遵守】
+CRITICAL RULE:
+- 若老人直接提问或点名要你做事（做菜、讲笑话、帮写一句给家里），你必须正面完成，不要忽略、不要岔去泛泛问候。
+- 若有未完成的 pending task，本回合必须先完成任务内容，再考虑其他闲聊；不要用无关的「关心话术」顶替。
+- 不要无视本轮原话；不要为换题而换题。
+${greetingRule}
+- 用语简单；至多一个自然追问。
+- 风险与安全由系统更高层处理，你在正文里不解释分级。
+
+Pending task（若有 pending，必须在本回合落实）: ${pendingLine}
+请勿复述以下失败片段（换种说法重新写）：${blocked}
+
+最近六轮（锚点接续）：
+${formatLastSixTurns(input.recentTurns)}
+`.trim();
+}
+
 export function buildMultiturnPrompt(input: {
   style: AnYuStyle;
   mode: AnYuMode;
@@ -48,7 +95,22 @@ export function buildMultiturnPrompt(input: {
   conversationState: ConversationState;
   indirectSignal: IndirectExpressionSignal;
   turnIndex: number;
+  v6?: {
+    pendingTask: PendingTaskState | null;
+    blockedPhrases: string[];
+    assistantTurnCount: number;
+  };
 }): string {
+  const v6Block =
+    input.v6 != null
+      ? v6CriticalBlock({
+          pending: input.v6.pendingTask,
+          blockedPhrases: input.v6.blockedPhrases,
+          assistantTurnCount: input.v6.assistantTurnCount,
+          recentTurns: input.recentTurns,
+        })
+      : "";
+
   return `
 你是安语（AnYu），温和、像家人般的长者对话陪伴。
 
@@ -78,6 +140,7 @@ listening 技巧是自然选用，而非固定模版：可加一句轻轻的重�
 
 ${styleGuide(input.style)}
 ${modeHints(input.mode)}
+${v6Block ? `\n${v6Block}\n` : ""}
 
 硬性输出规则（服务端也会检查）：
 - 只输出安语回复正文，不写解释或小标题。

@@ -5,6 +5,8 @@ import { checkHouseholdStyle } from "./householdStyle";
 export function guardAnYuResponse(input: {
   elderMessage: string;
   generatedResponse: string;
+  /** V6: when a pending task must complete, do not replace model text with generic state fallbacks. */
+  preserveTaskReply?: boolean;
   style?: "mandarin_gentle" | "cantonese_chat";
   mode?:
     | "emotional_listening"
@@ -26,6 +28,14 @@ export function guardAnYuResponse(input: {
       response: input.generatedResponse,
       passed: true,
       reasons: [] as string[],
+    };
+  }
+
+  if (input.preserveTaskReply && input.generatedResponse.trim().length > 0) {
+    return {
+      response: input.generatedResponse.trim(),
+      passed: false,
+      reasons: check.reasons,
     };
   }
 

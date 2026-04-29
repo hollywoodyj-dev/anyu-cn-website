@@ -8,6 +8,8 @@ export type ElderChatTurnInput = {
   turnId: string;
   /** 可选覆盖模型 */
   modelOverride?: string;
+  /** V6 重试时可略提高采样 */
+  sampling?: { temperature?: number; top_p?: number };
 };
 
 export type ElderChatTurnOk = {
@@ -60,20 +62,25 @@ export async function runElderChatTurn(input: ElderChatTurnInput): Promise<Elder
 
   logTurn(input.turnId, "request_start", { model, prompt_version: promptVersion });
 
+  const temp = input.sampling?.temperature ?? 0.7;
+  const topP = input.sampling?.top_p;
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: input.userMessage },
+    ],
+    temperature: temp,
+  };
+  if (typeof topP === "number") body.top_p = topP;
+
   const res = await fetch(OPENAI_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: input.userMessage },
-      ],
-      temperature: 0.7,
-    }),
+    body: JSON.stringify(body),
   });
 
   const raw = await res.text();

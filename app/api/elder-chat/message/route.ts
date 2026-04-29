@@ -44,6 +44,10 @@ import { guardAnYuResponse } from "@/lib/anyu-response/responseGuard";
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import { getRiskBlockedAssistantMessage, isRiskChatBlocked } from "@/lib/anyu/risk/blocked-reply";
 import { evaluateRiskText } from "@/lib/anyu/risk/evaluate";
+import { contextBindingGuard } from "@/lib/elder-agent/v6/contextBindingGuard";
+import { markPendingAnsweredIfDone, mergePendingTask } from "@/lib/elder-agent/v6/pendingTask";
+import { getSessionBinding, setSessionBinding } from "@/lib/elder-agent/v6/sessionBindingStore";
+import { taskAwareSafeFallback } from "@/lib/elder-agent/v6/taskSafeFallback";
 
 export const runtime = "nodejs";
 
@@ -311,61 +315,111 @@ export async function POST(req: NextRequest) {
     dialogueState = "emotional";
   }
   const indirectSignal = detectIndirectExpression(normalizedInput);
+  const binding = await getSessionBinding(sessionId);
+  const mergedPending = mergePendingTask(normalizedInput, turnIndex, binding.pendingTask);
 
   try {
-    const prompt = buildMultiturnPrompt({
-      currentMessage: normalizedInput,
-      mode: finalMode,
-      dialogueState,
-      riskLevel: risk.level,
-      style,
-      recentTurns,
-      activeThread,
-      conversationState,
-      indirectSignal,
-      turnIndex,
-    });
-    const result = await runElderChatTurn({ userMessage: prompt, turnId });
-    const guarded = guardAnYuResponse({
-      elderMessage: normalizedInput,
-      generatedResponse: result.assistantMessage,
-      style,
-      mode: finalMode,
-      riskLevel: risk.level,
-      dialogueState,
-    });
-    const directIndirectHandled = /(忍着|頂住|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(
-      guarded.response,
-    );
-    const requireQuestion = requiresReturnQuestion(finalMode, risk.level);
-    const indirectHandledText = directIndirectHandled ? guarded.response : getIndirectFallbackByStyle(style);
-    let finalResponse = indirectSignal.hasIndirectRestraint ? indirectHandledText : guarded.response;
-    let finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
-    if (indirectSignal.hasIndirectRestraint && !finalStyleCheck.pass) {
-      finalResponse = getIndirectFallbackByStyle(style);
-      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
-    }
     const recentAssistantResponses = recentTurns
       .filter((t) => t.role === "assistant")
       .map((t) => t.content)
       .slice(-5);
-    const repeated = repetitionGuard(finalResponse, recentAssistantResponses);
-    if (repeated.blocked) {
-      const seed = turnIndex + recentAssistantResponses.length + textSeed(normalizedInput);
-      finalResponse = pickStateFallbackNoLoop(
+    const assistantSoFar = recentTurns.filter((t) => t.role === "assistant").length;
+    let attemptBlocked = [...binding.blockedPhrases];
+    let modelCandidate: string | null = null;
+    let usedChatModel = configuredModel;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const prompt = buildMultiturnPrompt({
+        currentMessage: normalizedInput,
+        mode: finalMode,
         dialogueState,
+        riskLevel: risk.level,
         style,
-        seed,
-        recentAssistantResponses,
-        normalizedInput,
-      );
+        recentTurns,
+        activeThread,
+        conversationState,
+        indirectSignal,
+        turnIndex,
+        v6: {
+          pendingTask: mergedPending,
+          blockedPhrases: attemptBlocked,
+          assistantTurnCount: assistantSoFar,
+        },
+      });
+      const result = await runElderChatTurn({
+        userMessage: prompt,
+        turnId: attempt === 0 ? turnId : `${turnId}-r${attempt}`,
+        sampling: attempt > 0 ? { temperature: 0.85, top_p: 0.9 } : undefined,
+      });
+      usedChatModel = result.model;
+      const guarded = guardAnYuResponse({
+        elderMessage: normalizedInput,
+        generatedResponse: result.assistantMessage,
+        style,
+        mode: finalMode,
+        riskLevel: risk.level,
+        dialogueState,
+        preserveTaskReply: mergedPending?.status === "pending",
+      });
+      let text = guarded.response;
+      const dirOk = /(忍着|頂住|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(text);
+      if (indirectSignal.hasIndirectRestraint && mergedPending?.status !== "pending") {
+        text = dirOk ? text : getIndirectFallbackByStyle(style);
+      }
+      const bind = contextBindingGuard({
+        response: text,
+        userInput: normalizedInput,
+        pending: mergedPending,
+        turnIndex,
+        recentTurnCount: recentTurns.length,
+      });
+      const rep = repetitionGuard(text, recentAssistantResponses);
+      if (bind.pass && !rep.blocked) {
+        modelCandidate = text;
+        break;
+      }
+      attemptBlocked = [...attemptBlocked, text.slice(0, 120)].slice(-12);
+    }
+    if (!modelCandidate) {
+      modelCandidate = taskAwareSafeFallback(style, mergedPending, normalizedInput);
+    }
+    const directIndirectHandled = /(忍着|頂住|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(
+      modelCandidate,
+    );
+    const requireQuestion =
+      requiresReturnQuestion(finalMode, risk.level) && mergedPending?.status !== "pending";
+    let finalResponse = modelCandidate;
+    let finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    if (
+      indirectSignal.hasIndirectRestraint &&
+      !finalStyleCheck.pass &&
+      mergedPending?.status !== "pending"
+    ) {
+      finalResponse = getIndirectFallbackByStyle(style);
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     }
-    const v5CorrectionNeeded = needsV5Correction({
-      state: dialogueState,
-      userText: normalizedInput,
-      response: finalResponse,
-    });
+    const repeated = repetitionGuard(finalResponse, recentAssistantResponses);
+    if (repeated.blocked) {
+      if (mergedPending?.status === "pending") {
+        finalResponse = taskAwareSafeFallback(style, mergedPending, normalizedInput);
+      } else {
+        const seed = turnIndex + recentAssistantResponses.length + textSeed(normalizedInput);
+        finalResponse = pickStateFallbackNoLoop(
+          dialogueState,
+          style,
+          seed,
+          recentAssistantResponses,
+          normalizedInput,
+        );
+      }
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    }
+    const v5CorrectionNeeded =
+      mergedPending?.status !== "pending" &&
+      needsV5Correction({
+        state: dialogueState,
+        userText: normalizedInput,
+        response: finalResponse,
+      });
     if (v5CorrectionNeeded) {
       const seed = turnIndex + textSeed(normalizedInput);
       finalResponse = getV5StateResponseByStyle(dialogueState, style, normalizedInput, seed);
@@ -390,7 +444,7 @@ export async function POST(req: NextRequest) {
       pass: true,
       reason: undefined,
     };
-    if (resistance === "none") {
+    if (resistance === "none" && mergedPending?.status !== "pending") {
       continuityCheck = continuityGuard({
         response: finalResponse,
         activeThread,
@@ -430,6 +484,9 @@ export async function POST(req: NextRequest) {
       state: conversationState,
     });
 
+    const nextBindingPending = markPendingAnsweredIfDone(finalResponse, mergedPending, turnIndex);
+    await setSessionBinding(sessionId, { pendingTask: nextBindingPending, blockedPhrases: [] });
+
     await appendTurn(sessionId, {
       role: "user",
       content: normalizedInput,
@@ -452,7 +509,7 @@ export async function POST(req: NextRequest) {
         turnId,
         conversation_id: conversationId,
         lang,
-        modelLabel: result.model,
+        modelLabel: usedChatModel,
         prompt_version: getPromptVersion(),
         assistantText: finalResponse,
         risk: riskPayload,
@@ -471,7 +528,7 @@ export async function POST(req: NextRequest) {
       assistant_message: finalResponse,
       conversation_id: conversationId,
       meta: {
-        ...baseMeta(turnId, lang, result.model, {
+        ...baseMeta(turnId, lang, usedChatModel, {
           risk: riskPayload,
           chat_invoked: true,
           household_style_passed: finalStyleCheck.pass,
@@ -504,6 +561,10 @@ export async function POST(req: NextRequest) {
             continuityGuard: continuityCheck,
             qaResult: finalStyleCheck.pass ? "pass" : "fallback_used",
             failureReason: repeated.reason ?? (finalStyleCheck.pass ? null : "style_guard"),
+            v6: {
+              pending_task: mergedPending,
+              pending_task_after: nextBindingPending,
+            },
           },
           continuity: {
             usedRecentTurns: recentTurns.length > 0,
