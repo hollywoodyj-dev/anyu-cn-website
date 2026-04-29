@@ -10,6 +10,8 @@ import {
 } from "@/lib/elder-agent/activeThread";
 import {
   buildFamilyMessageSuggestion,
+  buildResistanceResponse,
+  detectResistance,
   extractFamilySlots,
   hasFilledFamilyIntent,
   repeatedPreferenceQuestion,
@@ -150,6 +152,17 @@ function needsV5Correction(input: {
   return false;
 }
 
+function isPreferenceQuestion(text: string): boolean {
+  return /(更想见一面|先通个电话|听到谁的声音|见一面还是先通个电话|约食餐饭)/.test(text);
+}
+
+function hasRecentScriptAdvice(recentTurns: { role: "user" | "assistant"; content: string }[]): boolean {
+  return recentTurns
+    .filter((t) => t.role === "assistant")
+    .slice(-5)
+    .some((t) => /(可以这样说|可以咁讲)/.test(t.content));
+}
+
 /**
  * POST /api/elder-chat/message — P0（ANYU_Voice_OpenAI_STT_Implementation_Spec §4.2）
  * Step 7：**先** `evaluateRiskText`；L3/L4 **不调 OpenAI**，返回安全引导（JSON 与 SSE 形态一致）。
@@ -287,8 +300,10 @@ export async function POST(req: NextRequest) {
   const activeThread: ActiveThread = buildActiveThread(recentTurns, normalizedInput);
   const currentAnchors = extractCurrentAnchors(normalizedInput);
   const familySlots = extractFamilySlots(recentTurns, normalizedInput);
+  const resistance = detectResistance(normalizedInput);
   const familyIntentReady = hasFilledFamilyIntent(familySlots);
   const familyLooping = repeatedPreferenceQuestion(recentTurns);
+  const repeatedAdvice = hasRecentScriptAdvice(recentTurns);
   const progressionToMessageBuilder =
     (activeThread.topic === "family" && familyIntentReady) || (activeThread.topic === "family" && familyLooping);
   if (progressionToMessageBuilder) {
@@ -375,19 +390,46 @@ export async function POST(req: NextRequest) {
       finalResponse = getV5StateResponseByStyle(dialogueState, style, normalizedInput, seed);
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     }
-    if (progressionToMessageBuilder) {
-      finalResponse = buildFamilyMessageSuggestion(familySlots, style);
+    if (resistance !== "none") {
+      finalResponse = buildResistanceResponse(resistance, style);
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion: false });
+    } else if (progressionToMessageBuilder) {
+      // Do not repeat the same script over and over; move to softer progression support.
+      if (repeatedAdvice) {
+        finalResponse =
+          style === "cantonese_chat"
+            ? "你已经讲得好清楚，我听到你想佢哋多啲联系你。\n而家你想先发一句短短问候，定等佢哋得闲先？"
+            : "你已经说得很清楚了，我听到你是想他们多联系你。\n现在你想先发一句简短问候，还是等他们有空再说？";
+      } else {
+        finalResponse = buildFamilyMessageSuggestion(familySlots, style);
+      }
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion: false });
     }
-    let continuityCheck = continuityGuard({
-      response: finalResponse,
-      activeThread,
-      currentAnchors,
-    });
-    if (!continuityCheck.pass) {
-      const seed = turnIndex + textSeed(normalizedInput) + 13;
-      finalResponse = getV5StateResponseByStyle(dialogueState, style, normalizedInput, seed);
-      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    let continuityCheck: { pass: boolean; reason?: string } = {
+      pass: true,
+      reason: undefined,
+    };
+    if (resistance === "none") {
+      continuityCheck = continuityGuard({
+        response: finalResponse,
+        activeThread,
+        currentAnchors,
+      });
+      if (!continuityCheck.pass) {
+        const seed = turnIndex + textSeed(normalizedInput) + 13;
+        finalResponse = getV5StateResponseByStyle(dialogueState, style, normalizedInput, seed);
+        finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+        continuityCheck = continuityGuard({
+          response: finalResponse,
+          activeThread,
+          currentAnchors,
+        });
+      }
+    }
+    // Guard preference-question loops in family topic.
+    if (activeThread.topic === "family" && isPreferenceQuestion(finalResponse) && familyIntentReady) {
+      finalResponse = buildFamilyMessageSuggestion(familySlots, style);
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion: false });
       continuityCheck = continuityGuard({
         response: finalResponse,
         activeThread,
@@ -474,6 +516,8 @@ export async function POST(req: NextRequest) {
             familySlots,
             familyIntentReady,
             familyLooping,
+            resistance,
+            repeatedAdvice,
             progressionToMessageBuilder,
             v5Corrected: v5CorrectionNeeded,
             continuityGuard: continuityCheck,

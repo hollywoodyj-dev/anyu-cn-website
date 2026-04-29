@@ -1,0 +1,6 @@
+{"id":"V5-PROG-001-family-contact-progression","style":"mandarin_gentle","turns":[{"role":"user","text":"儿子很少联系我"},{"role":"user","text":"我就想他多给我打电话"},{"role":"user","text":"多给我打电话就好了"},{"role":"user","text":"见一面也好"}]}
+{"id":"V5-PROG-002-resistance-cannot-say","style":"mandarin_gentle","turns":[{"role":"user","text":"我想让他们联系我"},{"role":"user","text":"我说不出口"},{"role":"user","text":"真的不知道怎么开口"}]}
+{"id":"V5-PROG-003-resistance-they-busy","style":"mandarin_gentle","turns":[{"role":"user","text":"我有点想儿子"},{"role":"user","text":"他们也忙"},{"role":"user","text":"我不想打扰他们"}]}
+{"id":"V5-PROG-004-no-greeting-reset","style":"mandarin_gentle","turns":[{"role":"user","text":"今天去买菜了"},{"role":"user","text":"回来有点累"},{"role":"user","text":"不过还好"},{"role":"user","text":"就是家里太安静"},{"role":"user","text":"没人说话"}]}
+{"id":"V5-PROG-005-cantonese-family","style":"cantonese_chat","turns":[{"role":"user","text":"仔女近排好少返嚟"},{"role":"user","text":"我想佢哋打个电话俾我"},{"role":"user","text":"我都唔知点开口"}]}
+{"id":"V5-PROG-006-health-to-family-handoff","style":"mandarin_gentle","turns":[{"role":"user","text":"最近腿疼走不动"},{"role":"user","text":"想他们过来看看我"},{"role":"user","text":"不知道怎么说合适"}]}
