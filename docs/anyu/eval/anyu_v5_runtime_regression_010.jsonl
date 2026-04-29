@@ -1,0 +1,5 @@
+{"id":"V5-RT-001-family-loneliness","style":"mandarin_gentle","turns":[{"role":"user","text":"今天还不错，出去市场了"},{"role":"user","text":"就是回来发现家里没人，只有我一个"},{"role":"user","text":"就是没人在家"},{"role":"user","text":"没人，就剩我一个"},{"role":"user","text":"没人关注我"}]}
+{"id":"V5-RT-002-casual-to-emotional","style":"mandarin_gentle","turns":[{"role":"user","text":"今天还行，天气不错"},{"role":"user","text":"嗯，不过回到家就很安静"},{"role":"user","text":"有时候就想有人说说话"}]}
+{"id":"V5-RT-003-emotional-to-story","style":"mandarin_gentle","turns":[{"role":"user","text":"最近总觉得闷"},{"role":"user","text":"算了，我想讲讲以前"},{"role":"user","text":"那时候我们一家都在老房子里"}]}
+{"id":"V5-RT-004-confused-clarify","style":"mandarin_gentle","turns":[{"role":"user","text":"还冰"},{"role":"user","text":"啊我意思是最近头有点晕"},{"role":"user","text":"今天还是有点不舒服"}]}
+{"id":"V5-RT-005-topic-shift","style":"cantonese_chat","turns":[{"role":"user","text":"近排仔女好少返嚟"},{"role":"user","text":"算啦，唔讲仔女啦"},{"role":"user","text":"我想讲以前嗰阵"},{"role":"user","text":"嗰阵时我日日带住佢哋返学"}]}
