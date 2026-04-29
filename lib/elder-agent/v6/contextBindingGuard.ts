@@ -54,6 +54,16 @@ export function isResponseRelatedToTask(response: string, task: PendingTaskState
 
 export type ContextBindingResult = { pass: true } | { pass: false; reason: string };
 
+function userSoundsDistressed(text: string): boolean {
+  return /没人|冇人|无人|无人理|唔理我|不理我|孤单|寂寞|无聊|唔开心|不舒服|难受|挂念|挂住|生气|火大|不在乎|忽略|心灰意冷|成日都|不明白|听唔明|听不懂/.test(
+    text,
+  );
+}
+
+function responseHasInappropriatePositiveDrift(response: string): boolean {
+  return /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊|唔错/.test(response);
+}
+
 export function contextBindingGuard(input: {
   response: string;
   userInput: string;
@@ -62,6 +72,10 @@ export function contextBindingGuard(input: {
   recentTurnCount: number;
 }): ContextBindingResult {
   const { response, userInput, pending, turnIndex, recentTurnCount } = input;
+
+  if (userSoundsDistressed(userInput) && responseHasInappropriatePositiveDrift(response)) {
+    return { pass: false, reason: "tone_mismatch" };
+  }
 
   if (pending?.status === "pending") {
     if (!isResponseRelatedToTask(response, pending)) {
@@ -80,7 +94,10 @@ export function contextBindingGuard(input: {
     }
   }
 
-  if (turnIndex > 2 && recentTurnCount >= 4 && containsGreetingReset(response)) {
+  if (
+    containsGreetingReset(response) &&
+    (turnIndex >= 2 || recentTurnCount >= 2 || userSoundsDistressed(userInput))
+  ) {
     return { pass: false, reason: "greeting_reset" };
   }
 

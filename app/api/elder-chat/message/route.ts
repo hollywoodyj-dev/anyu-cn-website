@@ -147,8 +147,11 @@ function needsV5Correction(input: {
 }): boolean {
   const u = input.userText;
   const r = input.response;
-  const negative = /没人|冇人|无聊|孤单|唔开心|不舒服|难受|挂念|挂住|生气|火大/.test(u);
-  const positiveDrift = /那挺好|听起来不错|几好啊/.test(r);
+  const negative =
+    /没人|冇人|无人|无人理|唔理我|不理我|无聊|孤单|寂寞|唔开心|不舒服|难受|挂念|挂住|生气|火大|不在乎|忽略|心灰意冷|成日都/.test(
+      u,
+    );
+  const positiveDrift = /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊/.test(r);
   if (negative && positiveDrift) return true;
   if (input.state === "story" && /(难受|堵|顶住|頂住)/.test(r)) return true;
   return false;
@@ -380,7 +383,18 @@ export async function POST(req: NextRequest) {
       attemptBlocked = [...attemptBlocked, text.slice(0, 120)].slice(-12);
     }
     if (!modelCandidate) {
-      modelCandidate = taskAwareSafeFallback(style, mergedPending, normalizedInput);
+      if (mergedPending?.status === "pending") {
+        modelCandidate = taskAwareSafeFallback(style, mergedPending, normalizedInput);
+      } else {
+        const seed = turnIndex + textSeed(normalizedInput) + 19;
+        modelCandidate = pickStateFallbackNoLoop(
+          dialogueState,
+          style,
+          seed,
+          recentAssistantResponses,
+          normalizedInput,
+        );
+      }
     }
     const directIndirectHandled = /(忍着|頂住|顶住|陪|问候|有人|係咪|对吗|會唔會|会不会)/.test(
       modelCandidate,
