@@ -71,6 +71,8 @@ export function detectConversationState(input: DetectStateInput): DialogueState 
       "冇人",
       "没人",
       "孤单",
+      "孤独",
+      "寂寞",
       "唔开心",
       "烦",
       "没人理解",

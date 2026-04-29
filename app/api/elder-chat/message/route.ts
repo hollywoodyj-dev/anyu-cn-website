@@ -148,10 +148,10 @@ function needsV5Correction(input: {
   const u = input.userText;
   const r = input.response;
   const negative =
-    /没人|冇人|无人|无人理|唔理我|不理我|无聊|孤单|寂寞|唔开心|不舒服|难受|挂念|挂住|生气|火大|不在乎|忽略|心灰意冷|成日都/.test(
+    /没人|冇人|无人|无人理|唔理我|不理我|无聊|孤单|孤單|孤独|寂寞|空虚|空虛|唔开心|不舒服|难受|挂念|挂住|生气|火大|不在乎|忽略|心灰意冷|成日都/.test(
       u,
     );
-  const positiveDrift = /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊/.test(r);
+  const positiveDrift = /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊|唔错/.test(r);
   if (negative && positiveDrift) return true;
   if (input.state === "story" && /(难受|堵|顶住|頂住)/.test(r)) return true;
   return false;

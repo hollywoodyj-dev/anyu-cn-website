@@ -55,7 +55,7 @@ export function isResponseRelatedToTask(response: string, task: PendingTaskState
 export type ContextBindingResult = { pass: true } | { pass: false; reason: string };
 
 function userSoundsDistressed(text: string): boolean {
-  return /没人|冇人|无人|无人理|唔理我|不理我|孤单|寂寞|无聊|唔开心|不舒服|难受|挂念|挂住|生气|火大|不在乎|忽略|心灰意冷|成日都|不明白|听唔明|听不懂/.test(
+  return /没人|冇人|无人|无人理|唔理我|不理我|孤单|孤單|孤独|寂寞|空虚|空虛|无聊|唔开心|不舒服|难受|挂念|挂住|生气|火大|不在乎|忽略|心灰意冷|成日都|不明白|听唔明|听不懂/.test(
     text,
   );
 }
