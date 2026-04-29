@@ -37,7 +37,6 @@ import {
 import { getPromptVersion } from "@/lib/anyu/prompts";
 import {
   getIndirectFallbackByStyle,
-  getStateFallbackByStyle,
   getV5StateResponseByStyle,
 } from "@/lib/anyu-response/householdFallbacks";
 import { checkHouseholdStyle } from "@/lib/anyu-response/householdStyle";
@@ -80,22 +79,17 @@ function baseMeta(turnId: string, lang: string, model: string, extra?: Record<st
   };
 }
 
-function routeMode(message: string): AnYuMode {
+// Nova direction — two layers: rules/state observe & summarize (for child-side meta); the model converses — here only narrow `mode` overrides (explicit tools, family-progression drafts) atop `supportive_response`, plus deterministic risk / ethics / repetition / continuity guards elsewhere in this handler.
+
+/** Narrow routing: explicit tools only. Normal L0–L2 stays model-led (`supportive_response`). */
+function explicitToolMode(message: string): AnYuMode | null {
   if (message.includes("怎么说") || message.includes("换一种说法")) {
     return "communication_reframe";
   }
   if (message.includes("帮我发") || message.includes("发给")) {
     return "family_message";
   }
-  return "emotional_listening";
-}
-
-function modeFromState(state: DialogueState): AnYuMode {
-  if (state === "family") return "family_message";
-  if (state === "casual" || state === "story" || state === "confused" || state === "health") {
-    return "supportive_response";
-  }
-  return "emotional_listening";
+  return null;
 }
 
 function resolveTurnIndex(sessionId: string | null, rawTurnIndex: unknown): number {
@@ -113,6 +107,11 @@ function resolveTurnIndex(sessionId: string | null, rawTurnIndex: unknown): numb
 function requiresReturnQuestion(mode: AnYuMode, riskLevel: "L0" | "L1" | "L2" | "L3" | "L4"): boolean {
   const lowRisk = riskLevel === "L0" || riskLevel === "L1" || riskLevel === "L2";
   return lowRisk && (mode === "emotional_listening" || mode === "supportive_response");
+}
+
+function resolveChatMode(message: string, progressionToMessageBuilder: boolean): AnYuMode {
+  if (progressionToMessageBuilder) return "family_message";
+  return explicitToolMode(message) ?? "supportive_response";
 }
 
 function textSeed(text: string): number {
@@ -147,7 +146,6 @@ function needsV5Correction(input: {
   const negative = /没人|冇人|无聊|孤单|唔开心|不舒服|难受|挂念|挂住|生气|火大/.test(u);
   const positiveDrift = /那挺好|听起来不错|几好啊/.test(r);
   if (negative && positiveDrift) return true;
-  if ((input.state === "emotional" || input.state === "family") && !/[？?]/.test(r)) return true;
   if (input.state === "story" && /(难受|堵|顶住|頂住)/.test(r)) return true;
   return false;
 }
@@ -289,9 +287,6 @@ export async function POST(req: NextRequest) {
     riskLevel: risk.level,
     asrConfidence: asrConfidenceRaw,
   });
-  const mode = routeMode(message);
-  const stateDrivenMode = modeFromState(dialogueState);
-  let finalMode: AnYuMode = mode === "communication_reframe" ? mode : stateDrivenMode;
   const conversationState = analyzeConversationState({
     recentTurns,
     currentMessage: normalizedInput,
@@ -306,21 +301,7 @@ export async function POST(req: NextRequest) {
   const repeatedAdvice = hasRecentScriptAdvice(recentTurns);
   const progressionToMessageBuilder =
     (activeThread.topic === "family" && familyIntentReady) || (activeThread.topic === "family" && familyLooping);
-  if (progressionToMessageBuilder) {
-    finalMode = "family_message";
-  }
-  if (dialogueState === "casual") {
-    if (conversationState.emotionalThread === "missing_family") {
-      dialogueState = "family";
-    } else if (conversationState.emotionalThread === "health_anxiety") {
-      dialogueState = "health";
-    } else if (
-      conversationState.emotionalThread === "loneliness" ||
-      conversationState.emotionalThread === "fear_of_burden"
-    ) {
-      dialogueState = "emotional";
-    }
-  }
+  const finalMode = resolveChatMode(message, progressionToMessageBuilder);
   const hasRecentRiskCarryover = Boolean(recentHighRiskUserTurn);
   if (
     hasRecentRiskCarryover &&

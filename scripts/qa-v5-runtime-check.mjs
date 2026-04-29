@@ -43,7 +43,6 @@ async function postTurn(baseUrl, body) {
 function checkTurn({ turnText, json, previousTopic }) {
   const topic = json?.meta?.active_thread?.topic ?? null;
   const guardPass = json?.meta?.runtime?.continuityGuard?.pass;
-  const mode = json?.meta?.mode ?? null;
   const risk = json?.meta?.risk?.level ?? null;
   const reasons = [];
 
@@ -54,7 +53,8 @@ function checkTurn({ turnText, json, previousTopic }) {
   if (isStoryInput && topic !== "story") reasons.push("story_not_switched");
 
   const isConfusedLike = /还冰|没八死个|听不清|唔清楚/.test(turnText);
-  if (isConfusedLike && mode === "emotional_listening") reasons.push("confused_not_clarified");
+  const dialogueState = json?.meta?.dialogue_state;
+  if (isConfusedLike && dialogueState && dialogueState !== "confused") reasons.push("confused_not_clarified");
 
   const isNegative = /没人|冇人|无聊|孤单|唔开心|难受|不舒服/.test(turnText);
   const resp = json?.assistant_message ?? "";
