@@ -1,4 +1,29 @@
 import type { DialogueState } from "@/lib/elder-agent/conversationStateEngine";
+import { getV5PhrasePack } from "@/lib/elder-agent/v5PhraseBank";
+
+function pickKeyEcho(text: string): string {
+  const t = text.trim();
+  const keys = [
+    "冇用",
+    "没用",
+    "没人",
+    "冇人",
+    "不回来",
+    "返嚟",
+    "仔女",
+    "儿子",
+    "女儿",
+    "孤单",
+    "无聊",
+    "闷",
+    "不舒服",
+    "唔舒服",
+  ];
+  for (const k of keys) {
+    if (t.includes(k)) return k;
+  }
+  return t.slice(0, Math.min(6, t.length));
+}
 
 export function getHouseholdFallback(message: string) {
   if (message.includes("没人") || message.includes("没人说话")) {
@@ -102,4 +127,33 @@ export function getStateFallbackByStyle(
     ]);
   }
   return "嗯，我在听。\n你慢慢说就好。";
+}
+
+export function getV5StateResponseByStyle(
+  state: DialogueState,
+  style: "mandarin_gentle" | "cantonese_chat",
+  userText: string,
+  seed = 0,
+): string {
+  const key = pickKeyEcho(userText);
+  const pack = getV5PhrasePack(style, state);
+  const pickPack = (arr: string[], delta = 0) => arr[Math.abs(seed + delta) % arr.length];
+  const baseThree = () => `${pickPack(pack.empathy)}\n${pickPack(pack.daily, 1)}\n${pickPack(pack.follow, 2)}`;
+  if (style === "cantonese_chat") {
+    if (state === "casual") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+    if (state === "health") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+    if (state === "story") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+    if (state === "confused") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+    if (state === "family") return `你讲到「${key}」。\n${pickPack(pack.daily, 1)}\n${pickPack(pack.follow, 2)}`;
+    if (state === "emotional") return `你讲到「${key}」。\n呢种感觉会几唔舒服。\n你而家最想讲边一句？`;
+    return baseThree();
+  }
+
+  if (state === "casual") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+  if (state === "health") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+  if (state === "story") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+  if (state === "confused") return `${pickPack(pack.empathy)}\n${pickPack(pack.follow, 1)}`;
+  if (state === "family") return `你刚刚提到「${key}」。\n${pickPack(pack.daily, 1)}\n${pickPack(pack.follow, 2)}`;
+  if (state === "emotional") return `你刚刚提到「${key}」。\n${pickPack(pack.daily, 1)}\n${pickPack(pack.follow, 2)}`;
+  return baseThree();
 }

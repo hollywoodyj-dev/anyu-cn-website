@@ -4,11 +4,17 @@ import {
   getRecentTurns,
 } from "@/lib/elder-agent/conversationContext";
 import {
+  buildActiveThread,
+  extractCurrentAnchors,
+  type ActiveThread,
+} from "@/lib/elder-agent/activeThread";
+import {
   detectConversationState,
   normalizeInputText,
   type DialogueState,
 } from "@/lib/elder-agent/conversationStateEngine";
 import { analyzeConversationState } from "@/lib/elder-agent/conversationStateAnalyzer";
+import { continuityGuard } from "@/lib/elder-agent/continuityGuard";
 import { detectIndirectExpression } from "@/lib/elder-agent/indirectExpression";
 import { buildMultiturnPrompt } from "@/lib/elder-agent/multiturnPromptBuilder";
 import { repetitionGuard } from "@/lib/elder-agent/repetitionGuard";
@@ -21,7 +27,11 @@ import {
   safeAssistantFallback,
 } from "@/lib/anyu/openai-chat";
 import { getPromptVersion } from "@/lib/anyu/prompts";
-import { getIndirectFallbackByStyle, getStateFallbackByStyle } from "@/lib/anyu-response/householdFallbacks";
+import {
+  getIndirectFallbackByStyle,
+  getStateFallbackByStyle,
+  getV5StateResponseByStyle,
+} from "@/lib/anyu-response/householdFallbacks";
 import { checkHouseholdStyle } from "@/lib/anyu-response/householdStyle";
 import { guardAnYuResponse } from "@/lib/anyu-response/responseGuard";
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
@@ -110,13 +120,28 @@ function pickStateFallbackNoLoop(
 ): string {
   const attemptSeeds = [baseSeed, baseSeed + 3, baseSeed + 7];
   for (const seed of attemptSeeds) {
-    const candidate = getStateFallbackByStyle(dialogueState, style, seed, contextText);
+    const candidate = getV5StateResponseByStyle(dialogueState, style, contextText, seed);
     if (!repetitionGuard(candidate, recentAssistantResponses).blocked) return candidate;
   }
   if (style === "cantonese_chat") {
-    return "我听到你呢句更重。\n你想先讲下，啱啱边下最难顶？";
+    return "你讲到呢句，我听到你真係唔易。\n你想先讲边一句最顶住你？";
   }
-  return "我听到你这句更重了。\n你想先把最难受的那一下说出来吗？";
+  return "你这句我听到了，确实不轻。\n你想先把最难受的那一下说出来吗？";
+}
+
+function needsV5Correction(input: {
+  state: DialogueState;
+  userText: string;
+  response: string;
+}): boolean {
+  const u = input.userText;
+  const r = input.response;
+  const negative = /没人|冇人|无聊|孤单|唔开心|不舒服|难受|挂念|挂住|生气|火大/.test(u);
+  const positiveDrift = /那挺好|听起来不错|几好啊/.test(r);
+  if (negative && positiveDrift) return true;
+  if ((input.state === "emotional" || input.state === "family") && !/[？?]/.test(r)) return true;
+  if (input.state === "story" && /(难受|堵|顶住|頂住)/.test(r)) return true;
+  return false;
 }
 
 /**
@@ -253,6 +278,8 @@ export async function POST(req: NextRequest) {
     currentMessage: normalizedInput,
     currentRiskLevel: risk.level,
   });
+  const activeThread: ActiveThread = buildActiveThread(recentTurns, normalizedInput);
+  const currentAnchors = extractCurrentAnchors(normalizedInput);
   if (dialogueState === "casual") {
     if (conversationState.emotionalThread === "missing_family") {
       dialogueState = "family";
@@ -283,6 +310,7 @@ export async function POST(req: NextRequest) {
       riskLevel: risk.level,
       style,
       recentTurns,
+      activeThread,
       conversationState,
       indirectSignal,
       turnIndex,
@@ -322,6 +350,31 @@ export async function POST(req: NextRequest) {
         normalizedInput,
       );
       finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    }
+    const v5CorrectionNeeded = needsV5Correction({
+      state: dialogueState,
+      userText: normalizedInput,
+      response: finalResponse,
+    });
+    if (v5CorrectionNeeded) {
+      const seed = turnIndex + textSeed(normalizedInput);
+      finalResponse = getV5StateResponseByStyle(dialogueState, style, normalizedInput, seed);
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    }
+    let continuityCheck = continuityGuard({
+      response: finalResponse,
+      activeThread,
+      currentAnchors,
+    });
+    if (!continuityCheck.pass) {
+      const seed = turnIndex + textSeed(normalizedInput) + 13;
+      finalResponse = getV5StateResponseByStyle(dialogueState, style, normalizedInput, seed);
+      finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+      continuityCheck = continuityGuard({
+        response: finalResponse,
+        activeThread,
+        currentAnchors,
+      });
     }
     const indirectStrategy = !indirectSignal.hasIndirectRestraint
       ? "none"
@@ -386,6 +439,7 @@ export async function POST(req: NextRequest) {
           turn_index: turnIndex,
           style,
           dialogue_state: dialogueState,
+          active_thread: activeThread,
           runtime: {
             userInput: message,
             normalizedInput,
@@ -399,6 +453,8 @@ export async function POST(req: NextRequest) {
             response: finalResponse,
             repetitionBlocked: repeated.blocked,
             recentRiskCarryover: hasRecentRiskCarryover,
+            v5Corrected: v5CorrectionNeeded,
+            continuityGuard: continuityCheck,
             qaResult: finalStyleCheck.pass ? "pass" : "fallback_used",
             failureReason: repeated.reason ?? (finalStyleCheck.pass ? null : "style_guard"),
           },

@@ -1,5 +1,6 @@
 import type { AnYuMode } from "@/lib/anyu-response/householdStyle";
 import type { RiskLevel } from "@/lib/anyu/risk/evaluate";
+import type { ActiveThread } from "./activeThread";
 import type { DialogueState } from "./conversationStateEngine";
 import type { ConversationTurn } from "./conversationContext";
 import type { ConversationState } from "./conversationStateAnalyzer";
@@ -26,6 +27,12 @@ function formatRecentTurns(turns: ConversationTurn[]): string {
     .join("\n");
 }
 
+function formatLastThreeTurns(turns: ConversationTurn[]): string {
+  const last3 = turns.slice(-3);
+  if (!last3.length) return "（无）";
+  return last3.map((t) => `${t.role === "user" ? "老人" : "安语"}：${t.content}`).join("\n");
+}
+
 export function buildMultiturnPrompt(input: {
   style: AnYuStyle;
   mode: AnYuMode;
@@ -33,6 +40,7 @@ export function buildMultiturnPrompt(input: {
   riskLevel: RiskLevel;
   currentMessage: string;
   recentTurns: ConversationTurn[];
+  activeThread: ActiveThread;
   conversationState: ConversationState;
   indirectSignal: IndirectExpressionSignal;
   turnIndex: number;
@@ -68,11 +76,18 @@ ${modeGuide(input.mode)}
 - 含蓄表达：${input.indirectSignal.hasIndirectRestraint ? "是" : "否"}
 - 含蓄命中：${input.indirectSignal.matchedPhrases.join(" / ") || "无"}
 
+Recent conversation (last 3 turns):
+${formatLastThreeTurns(input.recentTurns)}
+
+Active thread:
+${JSON.stringify(input.activeThread, null, 2)}
+
 最近对话（按时间）：
 ${formatRecentTurns(input.recentTurns)}
 
 老人本轮：${input.currentMessage}
 
 请自然接住上一轮情绪，不要突然换话题，不要过度展开。
+继续当前 active thread，除非用户明确换题。
 `.trim();
 }
