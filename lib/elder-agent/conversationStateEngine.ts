@@ -60,6 +60,13 @@ export function detectConversationState(input: DetectStateInput): DialogueState 
       "没有人打电话",
       "没人联系",
       "没人问候",
+      "子女不在乎我",
+      "孩子不在乎我",
+      "他们不在乎我",
+      "你们不在乎我",
+      "唔在乎我",
+      "不理我",
+      "唔理我",
     ])
   ) {
     return "family";

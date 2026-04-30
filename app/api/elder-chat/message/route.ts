@@ -158,9 +158,13 @@ function needsV5Correction(input: {
 }
 
 function isDistressLikeInput(text: string): boolean {
-  return /孤独|孤單|孤单|寂寞|无人|無人|没人|冇人|不在乎|唔理我|不理我|难受|低落|不明白|听不懂|听唔明/.test(
+  return /孤独|孤單|孤单|寂寞|无人|無人|没人|冇人|不在乎|唔理我|不理我|难受|低落/.test(
     text,
   );
+}
+
+function isAlignmentRepairInput(text: string): boolean {
+  return /不明白我的意思|你唔明|你不懂|听不懂|听唔明|没听明白|冇听明/.test(text);
 }
 
 function hasExplicitDistressAck(text: string): boolean {
@@ -178,6 +182,11 @@ function enforceDistressFirstResponse(input: {
   response: string;
   style: "mandarin_gentle" | "cantonese_chat";
 }): string {
+  if (isAlignmentRepairInput(input.userText)) {
+    return input.style === "cantonese_chat"
+      ? "我想听明你呢句，你慢慢讲就得。\n你最想我先明白边一部分？"
+      : "我想听明白你这句，你慢慢说就行。\n你最想我先听明白哪一部分？";
+  }
   if (!isDistressLikeInput(input.userText)) return input.response;
   const positiveDrift = /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊|唔错/.test(input.response);
   const lacksAck = !hasExplicitDistressAck(input.response);

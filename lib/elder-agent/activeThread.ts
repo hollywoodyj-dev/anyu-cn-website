@@ -9,7 +9,7 @@ export type ActiveThread = {
 };
 
 const topicMatchers: Record<ActiveThread["topic"], RegExp> = {
-  family: /仔女|儿子|女儿|孩子|家人|佢哋|你哋|打电话|聯絡|联系|返嚟|不回来|不来看/,
+  family: /仔女|儿子|女儿|孩子|家人|佢哋|你哋|子女|打电话|聯絡|联系|返嚟|不回来|不来看|不在乎|唔在乎|唔理我|不理我/,
   loneliness: /没人|冇人|孤单|孤單|无聊|無聊|空落落|空空的|就剩我|没人在家|在意我/,
   health: /头痛|腰痛|胸口|头晕|頭暈|唔舒服|不舒服|没胃口|食唔落|失眠/,
   story: /以前|嗰阵|当年|细个|年轻时|那时候/,
@@ -28,7 +28,7 @@ function topicFromText(text: string): ActiveThread["topic"] {
 
 function emotionalAnchor(text: string): string | undefined {
   if (/冇用|没用|无用/.test(text)) return "低价值感";
-  if (/没人|冇人|忽略|不在意|在意我/.test(text)) return "被忽略";
+  if (/没人|冇人|忽略|不在意|不在乎|唔在乎|在意我/.test(text)) return "被忽略";
   if (/孤单|孤單|空落落|一个人/.test(text)) return "孤独";
   if (/挂住|掛住|想念/.test(text)) return "挂念家人";
   if (/怕|紧张|慌/.test(text)) return "不安";
@@ -37,7 +37,7 @@ function emotionalAnchor(text: string): string | undefined {
 
 function extractPeople(text: string): string[] {
   const out: string[] = [];
-  if (/仔女|孩子/.test(text)) out.push("仔女");
+  if (/仔女|孩子|子女/.test(text)) out.push("仔女");
   if (/儿子/.test(text)) out.push("儿子");
   if (/女儿/.test(text)) out.push("女儿");
   if (/家人/.test(text)) out.push("家人");
@@ -45,7 +45,7 @@ function extractPeople(text: string): string[] {
 }
 
 function pickKeyPhrase(text: string): string | undefined {
-  const keys = ["冇用", "没用", "没人", "冇人", "打电话", "不回来", "就剩我一个", "没人在家"];
+  const keys = ["冇用", "没用", "没人", "冇人", "不在乎", "唔在乎", "打电话", "不回来", "就剩我一个", "没人在家"];
   for (const k of keys) {
     if (text.includes(k)) return k;
   }
@@ -54,7 +54,7 @@ function pickKeyPhrase(text: string): string | undefined {
 
 function inferNeed(text: string): string | undefined {
   if (/没人|冇人|听我|关注|在意/.test(text)) return "想被听见";
-  if (/打电话|返嚟|不回来/.test(text)) return "想被联系";
+  if (/打电话|返嚟|不回来|不在乎|唔在乎|不理我|唔理我/.test(text)) return "想被联系";
   if (/以前|当年|细个/.test(text)) return "想讲回忆";
   if (/不舒服|头痛|累/.test(text)) return "想被关心";
   return undefined;
@@ -81,7 +81,7 @@ export function buildActiveThread(recentTurns: ConversationTurn[], currentInput:
 
 export function extractCurrentAnchors(currentInput: string): string[] {
   const anchors: string[] = [];
-  const samples = ["没人", "冇人", "冇用", "没用", "打电话", "不回来", "返嚟", "不舒服", "头晕", "以前", "当年"];
+  const samples = ["没人", "冇人", "不在乎", "唔在乎", "冇用", "没用", "打电话", "不回来", "返嚟", "不舒服", "头晕", "以前", "当年"];
   for (const s of samples) {
     if (currentInput.includes(s)) anchors.push(s);
   }
