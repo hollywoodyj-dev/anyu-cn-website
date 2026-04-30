@@ -29,3 +29,64 @@ model ElderChatTurn {
 
   @@index([sessionId, createdAt])
 }
+
+model ConversationSignal {
+  id                 String   @id @default(cuid())
+  elderUserId        String
+  sessionId          String?
+  emotion            String
+  mentionsFamily     Boolean  @default(false)
+  healthSignal       Boolean  @default(false)
+  indirectExpression Boolean  @default(false)
+  riskLevel          String
+  keywords           String[]
+  memoryCandidate    String?
+  suggestedAction    String?
+  createdAt          DateTime @default(now())
+
+  @@index([elderUserId, createdAt])
+}
+
+model DailySummary {
+  id              String   @id @default(cuid())
+  elderUserId     String
+  date            String
+  overallState    String
+  familyMentions  Int      @default(0)
+  lonelinessScore Int      @default(0)
+  healthSignals   Int      @default(0)
+  riskLevel       String
+  keyMessages     String[]
+  suggestedAction String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([elderUserId, date])
+  @@index([elderUserId, date])
+}
+
+model MemoryCard {
+  id          String   @id @default(cuid())
+  elderUserId String
+  content     String
+  tag         String
+  saved       Boolean  @default(false)
+  source      String   @default("signal")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([elderUserId, createdAt])
+}
+
+model FamilyNotification {
+  id          String   @id @default(cuid())
+  elderUserId String
+  childUserId String?
+  level       String
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([elderUserId, createdAt])
+}

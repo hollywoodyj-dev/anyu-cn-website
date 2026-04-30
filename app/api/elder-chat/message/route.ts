@@ -48,6 +48,8 @@ import { contextBindingGuard } from "@/lib/elder-agent/v6/contextBindingGuard";
 import { markPendingAnsweredIfDone, mergePendingTask } from "@/lib/elder-agent/v6/pendingTask";
 import { getSessionBinding, setSessionBinding } from "@/lib/elder-agent/v6/sessionBindingStore";
 import { taskAwareSafeFallback } from "@/lib/elder-agent/v6/taskSafeFallback";
+import { extractConversationSignal } from "@/lib/child-insights/signalExtractor";
+import { saveConversationSignal } from "@/lib/child-insights/repository";
 
 export const runtime = "nodejs";
 
@@ -55,6 +57,7 @@ const RISK_GATE_MODEL = "risk_gate" as const;
 
 type Body = {
   session_id?: unknown;
+  elder_user_id?: unknown;
   message?: unknown;
   lang?: unknown;
   style?: unknown;
@@ -239,6 +242,10 @@ export async function POST(req: NextRequest) {
 
   const sessionId =
     typeof body.session_id === "string" && body.session_id.trim() ? body.session_id.trim() : null;
+  const elderUserId =
+    typeof body.elder_user_id === "string" && body.elder_user_id.trim()
+      ? body.elder_user_id.trim()
+      : sessionId ?? "elder_default";
 
   const conversationId = sessionId ?? crypto.randomUUID();
   const sse = wantsSse(req, body);
@@ -567,6 +574,20 @@ export async function POST(req: NextRequest) {
       riskLevel: risk.level,
       style,
       mode: finalMode,
+    });
+    const childSignal = extractConversationSignal({
+      elderUserId,
+      sessionId,
+      text: normalizedInput,
+      riskLevel: risk.level,
+      emotionalThread: conversationState.emotionalThread,
+      activeTopic: activeThread.topic,
+      indirectExpression: indirectSignal.hasIndirectRestraint,
+    });
+    await saveConversationSignal({
+      elderUserId,
+      sessionId,
+      signal: childSignal,
     });
 
     if (sse) {
