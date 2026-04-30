@@ -157,6 +157,38 @@ function needsV5Correction(input: {
   return false;
 }
 
+function isDistressLikeInput(text: string): boolean {
+  return /孤独|孤單|孤单|寂寞|无人|無人|没人|冇人|不在乎|唔理我|不理我|难受|低落|不明白|听不懂|听唔明/.test(
+    text,
+  );
+}
+
+function hasExplicitDistressAck(text: string): boolean {
+  return /听到|聽到|明白|不好受|唔好受|唔易|不容易|冷清|孤独|孤單|孤单|在意|挂住|掛住|受委屈/.test(
+    text,
+  );
+}
+
+function hasTemplateReset(text: string): boolean {
+  return /今天过得还轻松吗|今天有没有什么特别|见到你就好|今天还好吗|你现在在家吗/.test(text);
+}
+
+function enforceDistressFirstResponse(input: {
+  userText: string;
+  response: string;
+  style: "mandarin_gentle" | "cantonese_chat";
+}): string {
+  if (!isDistressLikeInput(input.userText)) return input.response;
+  const positiveDrift = /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊|唔错/.test(input.response);
+  const lacksAck = !hasExplicitDistressAck(input.response);
+  if (!positiveDrift && !hasTemplateReset(input.response) && !lacksAck) {
+    return input.response;
+  }
+  return input.style === "cantonese_chat"
+    ? "听到你呢句，我知你心里唔好受。\n你而家最想边个陪你讲两句？"
+    : "听到你这句，我知道你心里不好受。\n你现在最想谁陪你说两句？";
+}
+
 function isPreferenceQuestion(text: string): boolean {
   return /(更想见一面|先通个电话|听到谁的声音|见一面还是先通个电话|约食餐饭)/.test(text);
 }
@@ -489,6 +521,12 @@ export async function POST(req: NextRequest) {
         currentAnchors,
       });
     }
+    finalResponse = enforceDistressFirstResponse({
+      userText: normalizedInput,
+      response: finalResponse,
+      style,
+    });
+    finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     const indirectStrategy = !indirectSignal.hasIndirectRestraint
       ? "none"
       : directIndirectHandled
