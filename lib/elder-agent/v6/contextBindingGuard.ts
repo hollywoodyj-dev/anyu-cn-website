@@ -34,20 +34,8 @@ export function extractMainAnchors(userInput: string, pending: PendingTaskState 
 
 export function isResponseRelatedToTask(response: string, task: PendingTaskState): boolean {
   const r = response;
-  if (task.type === "recipe") {
-    return /(做法|切|煮|炖|焖|炒|酱油|醬油|姜|五花肉|焯水|燜|步骤|简单|教你|教埋|讲俾|讲给|听你说)/.test(r);
-  }
-  if (task.type === "joke") {
-    return /(笑话|笑話|有个人|好笑|哈哈|从前|有一日|有一天)/.test(r);
-  }
   if (task.type === "family_message") {
     return /(可以这样说|可以咁讲|你可以说|发一句|打电话|回来吃饭|返嚟食饭|有空|得闲)/.test(r);
-  }
-  if (task.type === "story") {
-    return /(以前|那时候|那時候|慢慢讲|慢慢講|听你说|聽你講|发生什么|發生咩事)/.test(r);
-  }
-  if (task.type === "question_answer") {
-    return r.length >= 10 && !containsGreetingReset(r);
   }
   return true;
 }
@@ -64,6 +52,16 @@ function responseHasInappropriatePositiveDrift(response: string): boolean {
   return /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊|唔错/.test(response);
 }
 
+function asksNonCoreAssistantTask(text: string): boolean {
+  return /(怎么做|點整|点整|教我做|做法|煮|红烧肉|笑话|講個笑話|讲个笑话|逗我笑)/.test(text);
+}
+
+function isLightRedirectToFamilyOrState(response: string): boolean {
+  return /(家人|子女|仔女|回来|返嚟|一起吃|一齐食|今晚|联系|聯絡|想有人|想热闹|想有人陪|你现在最想)/.test(
+    response,
+  );
+}
+
 export function contextBindingGuard(input: {
   response: string;
   userInput: string;
@@ -77,6 +75,10 @@ export function contextBindingGuard(input: {
     return { pass: false, reason: "tone_mismatch" };
   }
 
+  if (asksNonCoreAssistantTask(userInput) && !isLightRedirectToFamilyOrState(response)) {
+    return { pass: false, reason: "non_core_task_not_redirected" };
+  }
+
   if (pending?.status === "pending") {
     if (!isResponseRelatedToTask(response, pending)) {
       return { pass: false, reason: "pending_task_not_completed" };
@@ -86,12 +88,7 @@ export function contextBindingGuard(input: {
   const anchors = extractMainAnchors(userInput, pending);
   const taskOk = pending?.status === "pending" && isResponseRelatedToTask(response, pending);
   if (anchors.length > 0 && !containsAny(response, anchors) && turnIndex > 1 && !taskOk) {
-    const cookingOk =
-      /(做法|切|煮|炖|焖|炒|焯水|酱油|姜|肉)/.test(response) &&
-      (pending?.type === "recipe" || /肉|煮|做|菜/.test(userInput));
-    if (!cookingOk) {
-      return { pass: false, reason: "current_anchor_missing" };
-    }
+    return { pass: false, reason: "current_anchor_missing" };
   }
 
   if (

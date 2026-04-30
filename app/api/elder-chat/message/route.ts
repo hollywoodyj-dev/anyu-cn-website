@@ -161,6 +161,10 @@ function isPreferenceQuestion(text: string): boolean {
   return /(更想见一面|先通个电话|听到谁的声音|见一面还是先通个电话|约食餐饭)/.test(text);
 }
 
+function isNonCoreAssistantAsk(text: string): boolean {
+  return /(怎么做|點整|点整|教我做|做法|煮|红烧肉|笑话|講個笑話|讲个笑话|逗我笑)/.test(text);
+}
+
 function hasRecentScriptAdvice(recentTurns: { role: "user" | "assistant"; content: string }[]): boolean {
   return recentTurns
     .filter((t) => t.role === "assistant")
@@ -383,7 +387,7 @@ export async function POST(req: NextRequest) {
       attemptBlocked = [...attemptBlocked, text.slice(0, 120)].slice(-12);
     }
     if (!modelCandidate) {
-      if (mergedPending?.status === "pending") {
+      if (mergedPending?.status === "pending" || isNonCoreAssistantAsk(normalizedInput)) {
         modelCandidate = taskAwareSafeFallback(style, mergedPending, normalizedInput);
       } else {
         const seed = turnIndex + textSeed(normalizedInput) + 19;
