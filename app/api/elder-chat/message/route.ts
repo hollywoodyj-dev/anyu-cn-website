@@ -289,6 +289,20 @@ export async function POST(req: NextRequest) {
       style,
       mode: risk.level === "L4" ? "urgent_alert" : "safety_risk",
     });
+    const childSignal = extractConversationSignal({
+      elderUserId,
+      sessionId,
+      text: normalizedInput,
+      riskLevel: risk.level,
+      emotionalThread: "unclear",
+      activeTopic: "confused",
+      indirectExpression: false,
+    });
+    await saveConversationSignal({
+      elderUserId,
+      sessionId,
+      signal: childSignal,
+    });
 
     if (sse) {
       const stream = createStaticAssistantSseStream({

@@ -75,16 +75,19 @@ export async function POST(req: Request) {
   const runtime = (meta.runtime ?? {}) as Record<string, unknown>;
   const activeThread = (meta.active_thread ?? {}) as Record<string, unknown>;
   const riskLevel = typeof risk.level === "string" ? risk.level : "L1";
-  const mentionsFamily =
-    runtime.detectedEmotion === "missing_family" ||
-    activeThread.topic === "family" ||
-    /家人|子女|仔女|返嚟|回来|吃饭|电话/.test(text);
-  const lonelinessLike =
-    runtime.detectedEmotion === "loneliness" || /孤独|孤单|寂寞|无人|没人|冇人/.test(text);
+  const familyByCurrentTurn = /家人|子女|仔女|返嚟|回来|吃饭|电话|联系/.test(text);
+  const lonelyByCurrentTurn = /孤独|孤单|寂寞|无人|没人|冇人|冷清/.test(text);
+  const mentionsFamily = familyByCurrentTurn
+    ? true
+    : runtime.detectedEmotion === "missing_family" || activeThread.topic === "family";
+  const lonelinessLike = lonelyByCurrentTurn
+    ? true
+    : runtime.detectedEmotion === "loneliness";
+  const mappedMentionsFamily = lonelinessLike && riskLevel !== "L3" && riskLevel !== "L4" ? false : mentionsFamily;
   return NextResponse.json({
     textReply: reply,
     ttsUrl: null,
-    lightState: mapLightState({ riskLevel, mentionsFamily, lonelinessLike }),
+    lightState: mapLightState({ riskLevel, mentionsFamily: mappedMentionsFamily, lonelinessLike }),
     riskLevel,
     conversationId: json.conversation_id ?? null,
   });
