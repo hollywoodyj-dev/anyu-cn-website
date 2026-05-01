@@ -166,8 +166,27 @@ function isDistressLikeInput(text: string): boolean {
   );
 }
 
+function isFamilyHurtInput(text: string): boolean {
+  const t = text.trim();
+  return (
+    /子女不在乎|他们不在乎|她們不在乎|她们不在乎|不在乎我的感受|根本不在乎/.test(t) ||
+    /他们.*不来看|她们.*不来看|都不来看我|来看我.*看手机|来看我.*看视频|来看我.*玩电脑/.test(t) ||
+    /来了也只|來了也只|也只是看手|也很少理我|很少理我|不需要我了|唔需要我了/.test(t) ||
+    /家人不在乎|儿子不在乎|仔女不在乎|女儿不在乎/.test(t)
+  );
+}
+
 function isAlignmentRepairInput(text: string): boolean {
-  return /不明白我的意思|你唔明|你不懂|听不懂|听唔明|没听明白|冇听明/.test(text);
+  const t = text.trim();
+  return (
+    /不明白我的意思|不明白我嘅意思/.test(t) ||
+    /你?(没|沒)(听|聽)(懂|明白)|听唔明|聽唔明|冇听明|未听明白|未听明|你听不明|你听唔明/.test(t) ||
+    /你没明白我讲咩|你唔明白我講咩|唔明我讲咩|没听懂我讲咩/.test(t) ||
+    /你是?答非所问|答非所问|答非所問/.test(t) ||
+    /不是(这个|這個)(意思)|唔係(?:呢個|這個|这个)?意思|不是呢个意思/.test(t) ||
+    /我不?是(?:说|説)?(?:这个|這個)|我不是讲呢个|唔係講(?:呢個|这个)/.test(t) ||
+    /你怎么老是这样回|你為什麼老是这样回|你点解(?:成)?日都咁回/.test(t)
+  );
 }
 
 function hasExplicitDistressAck(text: string): boolean {
@@ -189,6 +208,11 @@ function enforceDistressFirstResponse(input: {
     return input.style === "cantonese_chat"
       ? "我想听明你呢句，你慢慢讲就得。\n你最想我先明白边一部分？"
       : "我想听明白你这句，你慢慢说就行。\n你最想我先听明白哪一部分？";
+  }
+  if (isFamilyHurtInput(input.userText)) {
+    return input.style === "cantonese_chat"
+      ? "我听到你讲呢句，心里一定唔好受。\n你而家最想佢哋做边一件小事？"
+      : "我听到你这句，心里一定很不好受。\n你现在最想他们先做哪一件小事？";
   }
   if (!isDistressLikeInput(input.userText)) return input.response;
   const positiveDrift = /那挺好|那挺好的|听起来不错|几好啊|几好吖|好好啊|唔错啊|唔错/.test(input.response);
@@ -383,6 +407,21 @@ export async function POST(req: NextRequest) {
   ) {
     dialogueState = "emotional";
   }
+
+  // Keep dialogue_state coherent with analyzer + active thread when family neglect / longing shows through.
+  if (
+    dialogueState !== "risk" &&
+    dialogueState !== "story" &&
+    dialogueState !== "health" &&
+    (dialogueState === "casual" || dialogueState === "emotional" || dialogueState === "confused") &&
+    (conversationState.emotionalThread === "missing_family" || activeThread.topic === "family")
+  ) {
+    dialogueState = "family";
+  }
+  if (dialogueState !== "risk" && isAlignmentRepairInput(normalizedInput)) {
+    dialogueState = "confused";
+  }
+
   const indirectSignal = detectIndirectExpression(normalizedInput);
   const binding = await getSessionBinding(sessionId);
   const mergedPending = mergePendingTask(normalizedInput, turnIndex, binding.pendingTask);

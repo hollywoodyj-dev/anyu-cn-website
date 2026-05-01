@@ -21,7 +21,7 @@ export function extractFamilySlots(recentTurns: ConversationTurn[], currentInput
   const current = currentInput;
   const slots: FamilySlots = {};
   if (/儿子|阿仔/.test(merged)) slots.targetPerson = "儿子";
-  else if (/女儿|阿女/.test(merged)) slots.targetPerson = "女儿";
+  else if (/女儿|阿女|个女|個女/.test(merged)) slots.targetPerson = "女儿";
   else if (/家人|仔女|子女|孩子|他们|佢哋/.test(merged)) slots.targetPerson = "家人";
 
   // current input has priority for action update
@@ -60,26 +60,32 @@ export function buildFamilyMessageSuggestion(
   const person = slots.targetPerson ?? "家里人";
   if (style === "cantonese_chat") {
     if (slots.desiredAction === "call") {
-      return `你係想${person}多啲联系你。\n可以咁讲：「你得闲打个电话俾我，我会好开心。」`;
+      return `你係想${person}多听你把声。\n可以讲：「得闲打电话给我啦。」`;
     }
     if (slots.desiredAction === "visit") {
-      return `你係想${person}返嚟食餐饭。\n可以咁讲：「你得闲返嚟食餐饭，我会好开心。」`;
+      return `你係想${person}返嚟食餐饭。\n可以讲：「得闲返嚟食餐饭啦。」`;
     }
-    return `你係想${person}多啲联系你。\n可以咁讲：「你有空就同我讲两句，我会好开心。」`;
+    return `你係想同${person}讲一句。\n可以讲：「得闲同我讲两句啦。」`;
   }
   if (slots.desiredAction === "call") {
-    return `你是想让${person}多联系你一点。\n可以这样说：「你有空给我打个电话，我会很开心。」`;
+    return `你是想${person}给你打个电话。\n可以说：「有空给我打个电话吧。」`;
   }
   if (slots.desiredAction === "visit") {
-    return `你是想让${person}回来吃顿饭。\n可以这样说：「你有空回来吃顿饭吧，我会很开心。」`;
+    return `你是想${person}回来吃饭。\n可以说：「有空回来吃顿饭吧。」`;
   }
-  return `你是想让${person}多联系你一点。\n可以这样说：「你有空就跟我说两句，我会很开心。」`;
+  return `你是想${person}听你说一声。\n可以说：「有空跟我说两句。」`;
 }
 
 export function detectResistance(input: string): ResistanceType {
   if (/说不出口|不好意思说|不知道怎么开口|唔识点开口|講唔出口/.test(input)) return "cannot_say";
   if (/他们也忙|不想打扰|没时间|你哋忙|怕麻烦/.test(input)) return "they_are_busy";
-  if (/不知道|算了|随便|唔知/.test(input)) return "not_sure";
+  if (/算了|随便/.test(input)) return "not_sure";
+  if (/不知道有没有|有没有空|知不知道.*回不|知不知道.*来不|回不回来吃饭|能不能回来|叫.*回来/.test(input)) {
+    return "none";
+  }
+  if (/不知道怎么说|不知怎么说|不知道怎么讲|不知怎么讲|唔知点讲|唔知怎么说|唔知點講|唔识点讲好/.test(input)) {
+    return "not_sure";
+  }
   return "none";
 }
 

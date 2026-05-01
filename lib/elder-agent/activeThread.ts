@@ -9,7 +9,8 @@ export type ActiveThread = {
 };
 
 const topicMatchers: Record<ActiveThread["topic"], RegExp> = {
-  family: /仔女|儿子|女儿|孩子|家人|佢哋|你哋|子女|打电话|聯絡|联系|返嚟|不回来|不来看|不在乎|唔在乎|唔理我|不理我/,
+  family:
+    /仔女|儿子|女儿|孩子|家人|個女|个女|佢哋|你哋|子女|打电话|聯絡|联系|返嚟|回来吃饭|不回来|不来吃|都不来看|不来看|来看我|看手机|不在乎|唔在乎|在乎我的感受|唔理我|不理我|有没有空|叫他们|叫佢哋/,
   loneliness: /没人|冇人|孤单|孤單|无聊|無聊|空落落|空空的|就剩我|没人在家|在意我/,
   health: /头痛|腰痛|胸口|头晕|頭暈|唔舒服|不舒服|没胃口|食唔落|失眠/,
   story: /以前|嗰阵|当年|细个|年轻时|那时候/,
@@ -39,7 +40,7 @@ function extractPeople(text: string): string[] {
   const out: string[] = [];
   if (/仔女|孩子|子女/.test(text)) out.push("仔女");
   if (/儿子/.test(text)) out.push("儿子");
-  if (/女儿/.test(text)) out.push("女儿");
+  if (/女儿|个女|個女/.test(text)) out.push("女儿");
   if (/家人/.test(text)) out.push("家人");
   return out;
 }
