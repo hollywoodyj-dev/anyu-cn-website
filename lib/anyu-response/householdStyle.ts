@@ -50,6 +50,18 @@ const overusedClosingPhrases = [
   "先坐一会",
 ];
 
+/** Split on 。！？ then drop punctuation-only tails (e.g. closing 「」 after ? inside quotes). */
+function meaningfulHouseholdSentences(trimmed: string): string[] {
+  return trimmed
+    .split(/[。！？!?]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((s) => {
+      const core = s.replace(/[\s「」'"“”''（）(),，、；:：]/g, "");
+      return core.length >= 1 && /[\u4e00-\u9fa5A-Za-z]/.test(core);
+    });
+}
+
 function checkStyleConsistency(response: string, style?: AnYuStyle): string[] {
   if (!style) return [];
   const reasons: string[] = [];
@@ -83,10 +95,7 @@ export function checkHouseholdStyle(
     return { pass: false, reasons: ["回应为空"] };
   }
 
-  const sentences = trimmed
-    .split(/[。！？!?]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const sentences = meaningfulHouseholdSentences(trimmed);
 
   const questionCount = (trimmed.match(/[？?]/g) ?? []).length;
   if (questionCount > 1) {
