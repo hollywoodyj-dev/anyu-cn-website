@@ -109,7 +109,13 @@ async function runFamilyHurtSuite() {
 }
 
 async function runAlignmentSuite() {
-  const cases = ["你没听懂", "不是这个意思", "我不是说这个", "你怎么老是这样回"];
+  const cases = [
+    "你没听懂",
+    "不是这个意思",
+    "我不是说这个",
+    "你怎么老是这样回",
+    "我不是抱怨，我是说事实",
+  ];
   let fail = 0;
   for (const text of cases) {
     const sid = `v71-align-${randomUUID()}`;

@@ -185,7 +185,10 @@ function isAlignmentRepairInput(text: string): boolean {
     /你是?答非所问|答非所问|答非所問/.test(t) ||
     /不是(这个|這個)(意思)|唔係(?:呢個|這個|这个)?意思|不是呢个意思/.test(t) ||
     /我不?是(?:说|説)?(?:这个|這個)|我不是讲呢个|唔係講(?:呢個|这个)/.test(t) ||
-    /你怎么老是这样回|你為什麼老是这样回|你点解(?:成)?日都咁回/.test(t)
+    /你怎么老是这样回|你為什麼老是这样回|你点解(?:成)?日都咁回/.test(t) ||
+    // Clarifying stance: not venting / asking to be heard on facts (Lumen AR-M3)
+    /我不是(?:在)?抱怨|我不是发牢骚|唔係抱怨|不是在抱怨/.test(t) &&
+      /事实|事實|讲事|講事|说清楚|講清楚|说情况|講情況/.test(t)
   );
 }
 
@@ -596,6 +599,21 @@ export async function POST(req: NextRequest) {
       style,
     });
     finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
+    if (
+      !finalStyleCheck.pass &&
+      (finalMode === "family_message" ||
+        /帮我写|幫我寫|发给|發給|怎么说|點讲|点讲/.test(normalizedInput)) &&
+      (activeThread.topic === "family" || /儿子|女儿|子女|家人|仔女|他们|她們|她们/.test(normalizedInput))
+    ) {
+      const slotReply = buildFamilyMessageSuggestion(familySlots, style);
+      const slotCheck = checkHouseholdStyle(slotReply, style, {
+        requireQuestion: requiresReturnQuestion(finalMode, risk.level) && mergedPending?.status !== "pending",
+      });
+      if (slotCheck.pass) {
+        finalResponse = slotReply;
+        finalStyleCheck = slotCheck;
+      }
+    }
     const indirectStrategy = !indirectSignal.hasIndirectRestraint
       ? "none"
       : directIndirectHandled

@@ -60,20 +60,20 @@ export function buildFamilyMessageSuggestion(
   const person = slots.targetPerson ?? "家里人";
   if (style === "cantonese_chat") {
     if (slots.desiredAction === "call") {
-      return `你係想${person}多听你把声。\n可以讲：「得闲打电话给我啦。」`;
+      return `你係想${person}多听你把声。\n可以讲：「得闲打电话给我啦？」`;
     }
     if (slots.desiredAction === "visit") {
-      return `你係想${person}返嚟食餐饭。\n可以讲：「得闲返嚟食餐饭啦。」`;
+      return `你係想${person}返嚟食餐饭。\n可以讲：「得闲返嚟食餐饭啦？」`;
     }
-    return `你係想同${person}讲一句。\n可以讲：「得闲同我讲两句啦。」`;
+    return `你係想同${person}讲一句。\n可以讲：「得闲同我讲两句啦？」`;
   }
   if (slots.desiredAction === "call") {
-    return `你是想${person}给你打个电话。\n可以说：「有空给我打个电话吧。」`;
+    return `你是想${person}给你打个电话。\n可以说：「有空给我打个电话吗？」`;
   }
   if (slots.desiredAction === "visit") {
-    return `你是想${person}回来吃饭。\n可以说：「有空回来吃顿饭吧。」`;
+    return `你是想${person}回来吃饭。\n可以说：「有空回来吃顿饭吗？」`;
   }
-  return `你是想${person}听你说一声。\n可以说：「有空跟我说两句。」`;
+  return `你是想${person}听你说一声。\n可以说：「有空跟我说两句吗？」`;
 }
 
 export function detectResistance(input: string): ResistanceType {
