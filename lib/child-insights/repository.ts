@@ -1,4 +1,6 @@
 import { getPrismaClient } from "@/lib/server/prisma";
+import { appendFamilyNotificationIfEligible } from "@/lib/child-insights/familyNotifications";
+import { getChildParentLabel } from "@/lib/child-insights/childSettingsRepository";
 import type { ConversationSignalRecord, DashboardCard } from "./types";
 
 type NotificationItem = {
@@ -15,7 +17,7 @@ function dayKey(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-async function ensureChildTables(): Promise<void> {
+export async function ensureChildTables(): Promise<void> {
   if (tablesReady) return;
   const prisma = getPrismaClient();
   await prisma.$executeRawUnsafe(`
@@ -74,6 +76,13 @@ async function ensureChildTables(): Promise<void> {
     );
   `);
   tablesReady = true;
+}
+
+function maxRiskInWindow(levels: string[]): "L0" | "L1" | "L2" | "L3" | "L4" {
+  for (const tier of ["L4", "L3", "L2", "L1", "L0"] as const) {
+    if (levels.some((l) => l === tier)) return tier;
+  }
+  return "L1";
 }
 
 function parseJsonArray(v: unknown): string[] {
@@ -194,27 +203,15 @@ export async function saveConversationSignal(input: {
       now,
     );
 
-    if (highestRisk === "L3" || highestRisk === "L4" || familyMentions >= 2 || lonely >= 2) {
-      const level: "light" | "watch" | "risk" =
-        highestRisk === "L3" || highestRisk === "L4" ? "risk" : lonely >= 2 && familyMentions >= 2 ? "watch" : "light";
-      const message =
-        level === "risk"
-          ? "请尽快联系家人，确认当前情况。"
-          : level === "watch"
-            ? "最近几天她有点安静，可以找时间联系一下。"
-            : "今天她有点想家人，有空可以打个电话。";
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "FamilyNotification" ("id","elderUserId","level","title","message","read","createdAt")
-         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        crypto.randomUUID(),
-        input.elderUserId,
-        level,
-        level === "risk" ? "需要关注" : "轻提醒",
-        message,
-        false,
-        now,
-      );
-    }
+    const parentLabel = await getChildParentLabel(input.elderUserId);
+    await appendFamilyNotificationIfEligible(prisma, {
+      elderUserId: input.elderUserId,
+      parentLabel,
+      highestRisk,
+      lonelyTurnsToday: lonely,
+      familyMentionsToday: familyMentions,
+      now: new Date(now),
+    });
   } catch {
     // keep chat path resilient even if child-side persistence fails
   }
@@ -236,20 +233,28 @@ export async function getDashboard(elderUserId: string, parentName = "妈妈"): 
   }>;
   const summary = summaryRows[0];
   const last7 = (await prisma.$queryRawUnsafe(
-    `SELECT "lonelinessScore","familyMentions","healthSignals" FROM "DailySummary" WHERE "elderUserId" = $1 ORDER BY "date" DESC LIMIT 7`,
+    `SELECT "lonelinessScore","familyMentions","healthSignals","riskLevel","overallState" FROM "DailySummary" WHERE "elderUserId" = $1 ORDER BY "date" DESC LIMIT 7`,
     elderUserId,
-  )) as Array<{ lonelinessScore: number; familyMentions: number; healthSignals: number }>;
+  )) as Array<{
+    lonelinessScore: number;
+    familyMentions: number;
+    healthSignals: number;
+    riskLevel: string;
+    overallState: string;
+  }>;
   const trend = {
     lonely: last7.reduce((n, r) => n + Number(r.lonelinessScore ?? 0), 0),
+    lowMoodDays: last7.filter((r) => r.overallState === "low").length,
     familyMentions: last7.reduce((n, r) => n + Number(r.familyMentions ?? 0), 0),
     health: last7.reduce((n, r) => n + Number(r.healthSignals ?? 0), 0),
+    lastRiskLevel: maxRiskInWindow(last7.map((r) => String(r.riskLevel ?? "L1"))),
   };
   if (!summary) {
     return {
       parentName,
       state: "stable",
       summary: "今天状态平稳。",
-      suggestedAction: "有空的话，打个电话问候一下。",
+      suggestedAction: "今天可以找个时间联系一下。",
       trend,
     };
   }

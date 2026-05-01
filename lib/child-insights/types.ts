@@ -21,6 +21,24 @@ export type ConversationSignalRecord = {
   rawText: string;
 };
 
+export type ChildContact = {
+  id: string;
+  name: string;
+  relationship: string;
+  phone?: string;
+  email?: string;
+  priority: number;
+};
+
+export type ChildSettingsPayload = {
+  parentDisplayName?: string;
+  contacts?: ChildContact[];
+  reminderTiers?: { L1?: boolean; L2?: boolean; L3?: boolean; L4?: boolean };
+  memoryVisibility?: "curated" | "hidden" | "summary_only";
+  emergencyContact?: { name?: string; phone?: string };
+  consentAcknowledgedAt?: string;
+};
+
 export type DashboardCard = {
   parentName: string;
   state: "stable" | "lonely" | "low" | "watch" | "risk";
@@ -28,7 +46,11 @@ export type DashboardCard = {
   suggestedAction: string;
   trend: {
     lonely: number;
+    /** Days in last 7 with overallState === low (V1.1 compact trend). */
+    lowMoodDays: number;
     familyMentions: number;
     health: number;
+    /** Highest risk tier seen in last 7 daily rows. */
+    lastRiskLevel: "L0" | "L1" | "L2" | "L3" | "L4";
   };
 };

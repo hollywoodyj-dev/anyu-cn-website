@@ -202,6 +202,40 @@ function hasTemplateReset(text: string): boolean {
   return /今天过得还轻松吗|今天有没有什么特别|见到你就好|今天还好吗|你现在在家吗/.test(text);
 }
 
+const MANDARIN_LONELY_ACK = /孤单|孤独|空落落|空空的|冷清|寂寞|不好受|有点孤单|有点冷清|心里会空|今天有点孤单|一天这样/;
+
+function isMandarinLonelyLeanInput(text: string): boolean {
+  return /孤独|孤單|孤单|寂寞|无人|无人理|没人跟我说话|没人和我说话|没人同我讲|家里好安静|好安静|很安静|安静/.test(
+    text,
+  );
+}
+
+function needsMandarinLonelyToneStrengthen(
+  userText: string,
+  response: string,
+  lang: string,
+  turnIndex: number,
+  style: "mandarin_gentle" | "cantonese_chat",
+): boolean {
+  if (turnIndex !== 1) return false;
+  if (style !== "mandarin_gentle") return false;
+  const l = lang.toLowerCase();
+  if (l.startsWith("zh-hk") || l.startsWith("yue")) return false;
+  if (!l.startsWith("zh") && lang !== "zh") return false;
+  if (!isMandarinLonelyLeanInput(userText)) return false;
+  if (isAlignmentRepairInput(userText) || isFamilyHurtInput(userText)) return false;
+  return !MANDARIN_LONELY_ACK.test(response);
+}
+
+function strengthenMandarinLonelyFirstResponse(userText: string, seed: number): string {
+  const options = [
+    "听起来今天有点孤单。\n你今天最想先聊哪件小事？",
+    "一天这样过来，心里会空落落的。\n你现在最想先说哪一句？",
+    "我听到了，你今天有点不好受。\n你想先从哪一件小事说起？",
+  ];
+  return options[Math.abs(seed) % options.length];
+}
+
 function enforceDistressFirstResponse(input: {
   userText: string;
   response: string;
@@ -598,6 +632,20 @@ export async function POST(req: NextRequest) {
       response: finalResponse,
       style,
     });
+    if (
+      needsMandarinLonelyToneStrengthen(
+        normalizedInput,
+        finalResponse,
+        lang,
+        turnIndex,
+        style,
+      )
+    ) {
+      finalResponse = strengthenMandarinLonelyFirstResponse(
+        normalizedInput,
+        turnIndex + textSeed(normalizedInput),
+      );
+    }
     finalStyleCheck = checkHouseholdStyle(finalResponse, style, { requireQuestion });
     if (
       !finalStyleCheck.pass &&
