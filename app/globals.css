@@ -13,6 +13,30 @@
   /* 免责声明等：少量强调（《免责声明页 Spec》） */
   --anyu-risk: #b85858;
   --anyu-border: rgba(58, 54, 50, 0.12);
+
+  /* 子女端 Child — 暖白、柔和色块、非监控感 */
+  --child-app-bg: #f9f7f2;
+  --child-nav-bg: rgba(253, 250, 248, 0.96);
+  --child-nav-border: rgba(58, 54, 50, 0.08);
+  --child-tab-active: #4a7ab0;
+  --child-tab-idle: #8a8278;
+  --child-tab-pill: rgba(74, 122, 176, 0.12);
+  --child-brand-heart: #6a9b7d;
+  --child-card-hero: #f3efe8;
+  --child-card-shadow: 0 2px 18px rgba(58, 54, 50, 0.06);
+  --child-pill-soft: #fff6dd;
+  --child-nested-blue: #e8f0fa;
+  --child-nested-blue-ring: rgba(74, 122, 176, 0.15);
+  --child-memory-icon-bg: #efe9e0;
+  --child-cta-call-bg: #e4efe6;
+  --child-cta-call-ink: #2d4f38;
+  --child-cta-msg-bg: #e2ebf7;
+  --child-cta-msg-ink: #2a4a6e;
+  --child-cta-heart-bg: #f8e4e6;
+  --child-cta-heart-ink: #7a3a42;
+  --child-dot-lonely: #e4b84a;
+  --child-dot-family: #4a90e2;
+  --child-dot-risk: #7bc96f;
 }
 
 html {

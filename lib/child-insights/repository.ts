@@ -1,15 +1,8 @@
 import { getPrismaClient } from "@/lib/server/prisma";
 import { appendFamilyNotificationIfEligible } from "@/lib/child-insights/familyNotifications";
 import { getChildParentLabel } from "@/lib/child-insights/childSettingsRepository";
-import type { ConversationSignalRecord, DashboardCard } from "./types";
-
-type NotificationItem = {
-  level: "light" | "watch" | "risk";
-  title: string;
-  message: string;
-  createdAt: string;
-  read: boolean;
-};
+import { dailySignals, resolveChildStateDisplay } from "@/lib/child-insights/childUiCopy";
+import type { ChildNotificationItem, ConversationSignalRecord, DashboardCard } from "./types";
 
 let tablesReady = false;
 
@@ -75,7 +68,36 @@ export async function ensureChildTables(): Promise<void> {
       "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
     );
   `);
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'FamilyNotification' AND column_name = 'contactedAt'
+        ) THEN
+          ALTER TABLE "FamilyNotification" ADD COLUMN "contactedAt" TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+  } catch {
+    /* ignore migration errors on non-Postgres or restricted env */
+  }
   tablesReady = true;
+}
+
+async function fetchLatestMemoryTeaser(
+  prisma: ReturnType<typeof getPrismaClient>,
+  elderUserId: string,
+): Promise<{ id: string; excerpt: string } | null> {
+  const rows = (await prisma.$queryRawUnsafe(
+    `SELECT "id","content" FROM "MemoryCard" WHERE "elderUserId" = $1 ORDER BY "createdAt" DESC LIMIT 1`,
+    elderUserId,
+  )) as Array<{ id: string; content: string }>;
+  const r = rows[0];
+  if (!r?.content) return null;
+  const excerpt = r.content.length > 72 ? `${r.content.slice(0, 72)}…` : r.content;
+  return { id: r.id, excerpt };
 }
 
 function maxRiskInWindow(levels: string[]): "L0" | "L1" | "L2" | "L3" | "L4" {
@@ -230,6 +252,9 @@ export async function getDashboard(elderUserId: string, parentName = "妈妈"): 
     riskLevel: string;
     keyMessages: string;
     suggestedAction: string | null;
+    familyMentions: number;
+    lonelinessScore: number;
+    updatedAt: Date;
   }>;
   const summary = summaryRows[0];
   const last7 = (await prisma.$queryRawUnsafe(
@@ -249,15 +274,33 @@ export async function getDashboard(elderUserId: string, parentName = "妈妈"): 
     health: last7.reduce((n, r) => n + Number(r.healthSignals ?? 0), 0),
     lastRiskLevel: maxRiskInWindow(last7.map((r) => String(r.riskLevel ?? "L1"))),
   };
+  const teaser = await fetchLatestMemoryTeaser(prisma, elderUserId);
   if (!summary) {
     return {
       parentName,
       state: "stable",
+      stateDisplay: "steady",
+      riskLevelToday: "L1",
+      familyMentionsToday: 0,
+      lonelinessToday: 0,
+      lastUpdatedAt: null,
+      memoryTeaser: teaser,
       summary: "今天状态平稳。",
       suggestedAction: "今天可以找个时间联系一下。",
       trend,
     };
   }
+  const familyMentionsToday = Number(summary.familyMentions ?? 0);
+  const lonelinessToday = Number(summary.lonelinessScore ?? 0);
+  const riskLevelToday = (["L1", "L2", "L3", "L4"].includes(String(summary.riskLevel))
+    ? summary.riskLevel
+    : "L1") as "L1" | "L2" | "L3" | "L4";
+  const stateDisplay = resolveChildStateDisplay({
+    overallState: summary.overallState,
+    riskLevel: String(summary.riskLevel ?? "L1"),
+    familyMentionsToday,
+    lonelinessToday,
+  });
   const state = summary.riskLevel === "L3" || summary.riskLevel === "L4"
     ? "risk"
     : summary.overallState === "lonely"
@@ -271,6 +314,12 @@ export async function getDashboard(elderUserId: string, parentName = "妈妈"): 
   return {
     parentName,
     state,
+    stateDisplay,
+    riskLevelToday,
+    familyMentionsToday,
+    lonelinessToday,
+    lastUpdatedAt: summary.updatedAt ? new Date(summary.updatedAt).toISOString() : null,
+    memoryTeaser: teaser,
     summary: summaryLine,
     suggestedAction: summary.suggestedAction ?? "有空的话，打个电话问候一下。",
     trend,
@@ -286,6 +335,7 @@ export async function getDailyInsight(elderUserId: string): Promise<{
   riskLevel: string;
   keyMessages: string[];
   suggestedAction: string;
+  signals: string[];
 }> {
   await ensureChildTables();
   const prisma = getPrismaClient();
@@ -304,15 +354,19 @@ export async function getDailyInsight(elderUserId: string): Promise<{
     suggestedAction: string | null;
   }>;
   const r = rows[0];
+  const suggestedAction = r?.suggestedAction ?? "有空的话，打个电话问候一下。";
+  const familyMentions = Number(r?.familyMentions ?? 0);
+  const lonelinessScore = Number(r?.lonelinessScore ?? 0);
   return {
     date: today,
     overallState: r?.overallState ?? "stable",
-    familyMentions: Number(r?.familyMentions ?? 0),
-    lonelinessScore: Number(r?.lonelinessScore ?? 0),
+    familyMentions,
+    lonelinessScore,
     healthSignals: Number(r?.healthSignals ?? 0),
     riskLevel: r?.riskLevel ?? "L1",
     keyMessages: parseJsonArray(r?.keyMessages),
-    suggestedAction: r?.suggestedAction ?? "有空的话，打个电话问候一下。",
+    suggestedAction,
+    signals: dailySignals({ familyMentions, lonelinessScore, suggestedAction }),
   };
 }
 
@@ -349,20 +403,55 @@ export async function saveMemoryCard(input: { elderUserId: string; id: string })
   return count > 0;
 }
 
-export async function getNotifications(elderUserId: string): Promise<NotificationItem[]> {
+export async function getNotifications(elderUserId: string): Promise<ChildNotificationItem[]> {
   await ensureChildTables();
   const prisma = getPrismaClient();
   const rows = (await prisma.$queryRawUnsafe(
-    `SELECT "level","title","message","createdAt","read" FROM "FamilyNotification" WHERE "elderUserId" = $1 ORDER BY "createdAt" DESC LIMIT 30`,
+    `SELECT "id","level","title","message","createdAt","read","contactedAt" FROM "FamilyNotification" WHERE "elderUserId" = $1 ORDER BY "createdAt" DESC LIMIT 30`,
     elderUserId,
-  )) as Array<{ level: string; title: string; message: string; createdAt: Date; read: boolean }>;
+  )) as Array<{
+    id: string;
+    level: string;
+    title: string;
+    message: string;
+    createdAt: Date;
+    read: boolean;
+    contactedAt: Date | null;
+  }>;
   return rows.map((r) => ({
-    level: (r.level === "risk" || r.level === "watch" ? r.level : "light") as "light" | "watch" | "risk",
+    id: r.id,
+    level: (["light", "watch", "risk"].includes(r.level) ? r.level : "light") as "light" | "watch" | "risk",
     title: r.title,
     message: r.message,
     createdAt: new Date(r.createdAt).toISOString(),
     read: Boolean(r.read),
+    contactedAt: r.contactedAt ? new Date(r.contactedAt).toISOString() : null,
   }));
+}
+
+export async function markNotificationContacted(elderUserId: string, notificationId: string): Promise<boolean> {
+  await ensureChildTables();
+  const prisma = getPrismaClient();
+  const n = await prisma.$executeRawUnsafe(
+    `UPDATE "FamilyNotification" SET "contactedAt" = NOW(), "read" = true WHERE "elderUserId" = $1 AND "id" = $2`,
+    elderUserId,
+    notificationId,
+  );
+  return Number(n) > 0;
+}
+
+/** Marks same-calendar-day notifications (server local date) so dashboard「我已联系」can quiet repeats. */
+export async function markTodaysNotificationsContacted(elderUserId: string): Promise<number> {
+  await ensureChildTables();
+  const prisma = getPrismaClient();
+  const n = await prisma.$executeRawUnsafe(
+    `UPDATE "FamilyNotification" SET "contactedAt" = NOW(), "read" = true
+     WHERE "elderUserId" = $1
+       AND "createdAt" >= date_trunc('day', CURRENT_TIMESTAMP)
+       AND "contactedAt" IS NULL`,
+    elderUserId,
+  );
+  return Number(n);
 }
 
 export async function markNotificationsRead(elderUserId: string): Promise<number> {

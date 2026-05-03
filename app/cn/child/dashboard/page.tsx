@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const ELDER_DEMO = "elder_demo";
 
-export default async function ChildDashboardPage() {
+export default async function ChildDashboardRoutePage() {
   const card = await getDashboard(ELDER_DEMO, "妈妈");
   return (
     <ChildAppChrome>

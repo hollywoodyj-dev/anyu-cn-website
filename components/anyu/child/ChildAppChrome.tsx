@@ -1,37 +1,38 @@
 import Link from "next/link";
-
-const links = [
-  { href: "/cn/child", label: "总览" },
-  { href: "/cn/child/daily", label: "今日详情" },
-  { href: "/cn/child/trend", label: "趋势" },
-  { href: "/cn/child/notifications", label: "提醒" },
-  { href: "/cn/child/memory", label: "记忆" },
-  { href: "/cn/child/consent", label: "授权与说明" },
-  { href: "/cn/child/contacts", label: "联系人" },
-] as const;
+import { ChildBottomNav } from "@/components/anyu/child/ChildBottomNav";
 
 export function ChildAppChrome({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--anyu-bg)] text-[var(--anyu-ink)] text-[15px] leading-relaxed">
-      <header className="border-b border-[var(--anyu-border)] bg-[var(--anyu-bg-card)]">
-        <div className="mx-auto max-w-3xl px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/cn/child" className="text-lg font-semibold tracking-tight text-[var(--anyu-ink)]">
-            子女端
+    <div className="min-h-screen bg-[var(--child-app-bg)] text-[var(--anyu-ink)] text-[16px] leading-relaxed pb-28">
+      <header className="sticky top-0 z-30 border-b border-[var(--anyu-border)] bg-[var(--child-app-bg)]/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-lg items-start justify-between gap-3 px-4 py-4">
+          <div>
+            <Link href="/cn/child" className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-[var(--anyu-ink)]">
+              <svg width="20" height="20" viewBox="0 0 24 24" className="text-[var(--child-brand-heart)]" aria-hidden>
+                <path
+                  fill="currentColor"
+                  d="M12 21s-7-4.35-10-9c-2.5-4 1-8 5.5-8 2.5 0 4.5 1.5 4.5 4 0-2.5 2-4 4.5-4 4.5 0 8 4 5.5 8-3 4.65-10 9-10 9Z"
+                  opacity="0.9"
+                />
+              </svg>
+              安语
+            </Link>
+            <p className="mt-0.5 text-xs text-[var(--anyu-ink-muted)]">家庭连接从理解开始</p>
+          </div>
+          <Link
+            href="/cn/child/notifications"
+            className="rounded-full p-2 text-[var(--anyu-ink-muted)] hover:bg-[var(--anyu-bg-card)] hover:text-[var(--anyu-ink)]"
+            aria-label="提醒中心"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M18 8A6 6 0 1 0 6 8c0 7-3 7-3 7h12s-3 0-3-7" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
           </Link>
-          <nav className="flex flex-wrap gap-2">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="rounded-full border border-[var(--anyu-border)] px-3 py-1.5 text-sm text-[var(--anyu-ink-muted)] hover:bg-[var(--anyu-bg)] hover:text-[var(--anyu-ink)]"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </header>
-      <div className="mx-auto max-w-3xl px-4 py-6">{children}</div>
+      <main className="mx-auto max-w-lg px-4 py-5">{children}</main>
+      <ChildBottomNav />
     </div>
   );
 }

@@ -30,6 +30,25 @@ export type ChildContact = {
   priority: number;
 };
 
+export type ChildStateDisplay =
+  | "steady"
+  | "lonely"
+  | "missing_family"
+  | "low"
+  | "watch"
+  | "risk"
+  | "urgent";
+
+export type ChildNotificationItem = {
+  id: string;
+  level: "light" | "watch" | "risk";
+  title: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+  contactedAt: string | null;
+};
+
 export type ChildSettingsPayload = {
   parentDisplayName?: string;
   contacts?: ChildContact[];
@@ -42,6 +61,13 @@ export type ChildSettingsPayload = {
 export type DashboardCard = {
   parentName: string;
   state: "stable" | "lonely" | "low" | "watch" | "risk";
+  /** Curated mood line for hero (may differ from `state` when family cue is primary). */
+  stateDisplay: ChildStateDisplay;
+  riskLevelToday: "L1" | "L2" | "L3" | "L4";
+  familyMentionsToday: number;
+  lonelinessToday: number;
+  lastUpdatedAt: string | null;
+  memoryTeaser: { id: string; excerpt: string } | null;
   summary: string;
   suggestedAction: string;
   trend: {
