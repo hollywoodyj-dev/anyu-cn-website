@@ -1,9 +1,12 @@
 /**
- * AnYu V1.2 — Notification consent gate + child API privacy smoke (Nova / Lumen).
+ * AnYu V1.2 — Notification consent + Priority D/E QA (Nova / Lumen).
  *
- *   QA_BASE_URL=http://localhost:3030 node scripts/qa-v12-notification-consent.mjs
+ *   QA_BASE_URL=http://localhost:3000 npm run qa:v12
  *
- * Optional: chain V7/V1.1 regression (same shell env):
+ * Priority E — full close (v12 + chained v7 / v7.1 / v11 tone / v11 host):
+ *   QA_BASE_URL=http://localhost:3000 npm run qa:v12:close
+ *
+ * Or set env manually:
  *   QA_BASE_URL=... QA_RUN_CHAINED_REGRESSION=1 node scripts/qa-v12-notification-consent.mjs
  */
 import { randomUUID } from "node:crypto";
@@ -260,9 +263,88 @@ async function sectionInactiveContactsBlock() {
   pass("contacts", "only inactive contacts → no urgent row");
 }
 
+function countLightReminders(list) {
+  return list.filter((n) => n.level === "light" && /轻提醒/.test(n.title ?? "")).length;
+}
+
+function countL3RiskNotifications(list) {
+  return list.filter((n) => n.level === "risk" && /需要关注/.test(n.title ?? "")).length;
+}
+
+/**
+ * `appendFamilyNotificationIfEligible`: max 2 `level=light` rows per UTC calendar day
+ * once `lonelyTurnsToday >= 2` / family path is active (`lightToday >= 2` early return).
+ */
+async function sectionLightReminderDailyCap() {
+  const eid = `v12-cap-${randomUUID()}`;
+  await postSettings(eid, {
+    familyAlertsEnabled: true,
+    allowedNotificationChannels: { app: true },
+    reminderTiers: { L1: true, L2: true, L3: true, L4: true },
+    contacts: [{ id: "c1", name: "Ada", relationship: "女儿", priority: 1, active: true }],
+  });
+  const lonelySafe = [
+    "我好孤单",
+    "一个人好寂寞",
+    "夜里好冷清",
+    "没人陪我说说话",
+    "心里特别寂寞",
+  ];
+  for (const msg of lonelySafe) {
+    const c = await postChat(eid, msg);
+    if (!c.ok) return fail("light_cap", `chat HTTP ${c.status} for ${msg}`);
+    const lvl = c.json?.meta?.risk?.level;
+    if (lvl === "L3" || lvl === "L4") {
+      return fail("light_cap", `unexpected ${lvl} for light-cap phrase (stay L0–L2): ${msg}`);
+    }
+    await sleep(550);
+  }
+  const { json } = await getJson(`/api/child/notifications?elderUserId=${eid}`);
+  const list = json.notifications ?? [];
+  const lights = countLightReminders(list);
+  if (lights > 2) {
+    return fail("light_cap", `expected at most 2 light 轻提醒 rows per UTC day, got ${lights}`);
+  }
+  if (lights !== 2) {
+    return fail("light_cap", `expected exactly 2 light rows after 5 lonely turns (2 insert + cap), got ${lights}`);
+  }
+  pass("light_cap", "lonely-only path: at most 2 light reminders per day (cap enforced)");
+}
+
+/** Two L3 chats within 6h → single `需要关注` risk row (`recentRisk` dedupe in familyNotifications). */
+async function sectionL3DedupeSixHourWindow() {
+  const eid = `v12-l3d-${randomUUID()}`;
+  await postSettings(eid, {
+    familyAlertsEnabled: true,
+    allowedNotificationChannels: { app: true },
+    reminderTiers: { L1: true, L2: true, L3: true, L4: true },
+    emergencyContactMode: true,
+    emergencyContact: { phone: "13300000007" },
+    contacts: [{ id: "c1", name: "Ben", relationship: "儿子", priority: 1, active: true }],
+  });
+  const c1 = await postChat(eid, "活着没意思了");
+  if (!c1.ok) return fail("l3_dedupe", `chat1 HTTP ${c1.status}`);
+  if (c1.json?.meta?.risk?.level !== "L3") {
+    return fail("l3_dedupe", `chat1 expected L3, got ${c1.json?.meta?.risk?.level}`);
+  }
+  await sleep(550);
+  const c2 = await postChat(eid, "我撑不下去了");
+  if (!c2.ok) return fail("l3_dedupe", `chat2 HTTP ${c2.status}`);
+  if (c2.json?.meta?.risk?.level !== "L3") {
+    return fail("l3_dedupe", `chat2 expected L3, got ${c2.json?.meta?.risk?.level}`);
+  }
+  await sleep(550);
+  const { json } = await getJson(`/api/child/notifications?elderUserId=${eid}`);
+  const list = json.notifications ?? [];
+  const n = countL3RiskNotifications(list);
+  if (n > 1) return fail("l3_dedupe", `expected at most one 需要关注 row within 6h window, got ${n}`);
+  if (n < 1) return fail("l3_dedupe", "expected one L3 risk row after first L3 trigger");
+  pass("l3_dedupe", "two L3 chats within 6h → single 需要关注 family notification");
+}
+
 function runChainedRegression() {
   if (process.env.QA_RUN_CHAINED_REGRESSION !== "1") {
-    console.log("\n[info] Set QA_RUN_CHAINED_REGRESSION=1 to also run v7 / v7.1 / v11 tone / v11 host scripts.");
+    console.log("\n[info] Priority E: run `npm run qa:v12:close` (or QA_RUN_CHAINED_REGRESSION=1) to chain v7 / v7.1 / v11 tone / v11 host.");
     return;
   }
   const scripts = [
@@ -271,6 +353,7 @@ function runChainedRegression() {
     "qa-v11-tone-watchpoints.mjs",
     "qa-v11-host-sanity.mjs",
   ];
+  console.log("\n[Priority E] Chained regression — v7 → v7.1 → v11 tone → v11 host (same QA_BASE_URL)\n");
   for (const name of scripts) {
     const r = spawnSync(process.execPath, [join(root, "scripts", name)], {
       cwd: root,
@@ -281,8 +364,9 @@ function runChainedRegression() {
       console.error(`[FAIL] chained ${name} exit ${r.status}`);
       process.exit(1);
     }
+    console.log(`[PASS] chained ${name}`);
   }
-  console.log("\n[PASS] chained regression scripts completed.");
+  console.log("\n[PASS] Priority E chained regression completed (all four scripts).");
 }
 
 async function main() {
@@ -297,8 +381,10 @@ async function main() {
   await sectionAllAlertsOffBlocks();
   await sectionAppChannelOffBlocks();
   await sectionInactiveContactsBlock();
+  await sectionLightReminderDailyCap();
+  await sectionL3DedupeSixHourWindow();
 
-  console.log(`\nV1.2 consent summary: failed=${failed}`);
+  console.log(`\nV1.2 consent + Priority E (light cap, L3 dedupe) summary: failed=${failed}`);
   if (failed) process.exit(1);
 
   runChainedRegression();

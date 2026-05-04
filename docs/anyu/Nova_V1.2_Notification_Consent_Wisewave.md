@@ -91,11 +91,11 @@
 
 ## Priority E — Lumen QA（自动化建议）
 
-脚本：**`scripts/qa-v12-notification-consent.mjs`**（`npm run qa:v12`）。可选 **`QA_RUN_CHAINED_REGRESSION=1`** 在同一进程内继续跑 v7 / v7.1 / v11 tone / v11 host（需本机 / CI 已起服务且配置 `QA_BASE_URL`）。
+脚本：**`scripts/qa-v12-notification-consent.mjs`**（`npm run qa:v12`）。**串联 v7 / v7.1 / v11 tone / v11 host**（与 v12 同一 `QA_BASE_URL`）：**`npm run qa:v12:close`**（内部等价 `QA_RUN_CHAINED_REGRESSION=1` + v12）；或手动 `QA_RUN_CHAINED_REGRESSION=1 npm run qa:v12`。
 
-**当前脚本已覆盖（HTTP 黑盒）**：3 dashboard 隐私键扫描；8 通知列表内疚话术启发式；1 settings 往返；1、2、6 的 consent 变体（L4 无紧急时拦截、有紧急覆盖时放行、L3 tier 关闭拦截、总开关关、App 渠道关、联系人全 inactive 拦截）。  
+**当前脚本已覆盖（HTTP 黑盒）**：dashboard 隐私键扫描；通知列表内疚话术启发式；**Priority D**（UUID / transcript 标记）；settings 往返；consent 变体（L4 无紧急拦截、有紧急放行、L3 tier 关、总开关关、App 渠道关、inactive 联系人）；**轻提醒每日 cap**（`light` +「轻提醒」标题 ≤ 2 / 日，lonely 路径）；**L3 六小时内去重**（两次 L3 聊天 → 至多一条「需要关注」）；**Priority E 串联**：`qa:v7-first-response` → `qa-v7.1-family-state-regression` → `qa-v11-tone-watchpoints` → `qa-v11-host-sanity`（由 `qa:v12:close` 或 `QA_RUN_CHAINED_REGRESSION=1` 触发）。
 
-**仍建议 Lumen 人工或后续补自动化**：4 轻提醒 cap、5 L3 dedupe 时间窗、6 在「允许」配置下 L4 必出（与现有 dedupe 组合场景）。
+**Lumen 收口**：在可访问的 `QA_BASE_URL` 上 **`npm run qa:v12`** 与 **`npm run qa:v12:close`** 均 `failed=0` 后，将命令与 commit 记入 **`Lumen_QA_V1.2_Sync_Notes.md`**。
 
 ---
 

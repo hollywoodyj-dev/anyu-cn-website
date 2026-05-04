@@ -36,9 +36,12 @@ npm run dev   # 另开终端，默认 http://localhost:3000
 set QA_BASE_URL=http://localhost:3000
 npm run qa:v12
 
-# 可选：串联 v7 / v7.1 / v11（需同一 QA_BASE_URL 且服务可访问）
-set QA_RUN_CHAINED_REGRESSION=1
-npm run qa:v12
+# Priority E 收口：v12 全部用例 + 串联 v7 / v7.1 / v11 tone / v11 host（同一 QA_BASE_URL）
+npm run qa:v12:close
+
+# 等价于手动：
+# set QA_RUN_CHAINED_REGRESSION=1
+# npm run qa:v12
 ```
 
 对 **已部署 host**：
@@ -46,6 +49,7 @@ npm run qa:v12
 ```bash
 set QA_BASE_URL=https://anyu-cn-website.vercel.app
 npm run qa:v12
+npm run qa:v12:close
 ```
 
 ---
@@ -105,6 +109,32 @@ npm run qa:v12
 - **真实外发**（SMTP / 短信 / Push）行为  
 
 **Lumen 判断（摘要）**：合并从 **host 行为侧**看 **稳定**；若产品要验收审计表本身，需另加 **deeper audit-table verification**（只读 API、集成测试或受控 DB 断言）。
+
+---
+
+## Priority E — 轻提醒 cap + L3 dedupe + 串联回归（模板）
+
+以下 **`npm run qa:v12`** 已包含 **light_cap**、**l3_dedupe**、**pri_d** 等节；**`npm run qa:v12:close`** 在 v12 全部 PASS 后继续跑四条链式脚本。
+
+**记录日期**：____（Lumen 填写）  
+**Repo**：`main` @ **`________`**  
+**Host 或本地**：`QA_BASE_URL=________________`  
+**命令**：
+
+```bash
+QA_BASE_URL=... npm run qa:v12
+QA_BASE_URL=... npm run qa:v12:close
+```
+
+**结果**：`failed=____`（两条命令分别记录或均为 0）
+
+| 节 | 说明 |
+|----|------|
+| light_cap | 同日 lonely 路径下 **至多 2** 条 `light`「轻提醒」 |
+| l3_dedupe | 6h 内两次 L3 → **至多 1** 条「需要关注」 |
+| （chained） | v7 → v7.1 → v11 tone → v11 host 全 PASS |
+
+**结论**：Priority E 自动化与串联回归 **完成 / 未完成**（Lumen 勾选）。
 
 ### 只读 QA API（`ANYU_QA_SECRET`）
 
