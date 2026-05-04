@@ -8,6 +8,10 @@ import { getChildSettingsPayload } from "@/lib/child-insights/childSettingsRepos
 import { logFamilyNotificationConsentBlock } from "@/lib/child-insights/notificationConsentAudit";
 import { insertNotificationDeliveryAttempt } from "@/lib/child-insights/notificationDeliveryAudit";
 import type { ChildSettingsPayload } from "@/lib/child-insights/types";
+import {
+  normalizeFamilyNotificationStrings,
+  sanitizeParentLabelForNotification,
+} from "@/lib/child-insights/notificationPayloadPrivacy";
 import { dispatchExternalNotificationChannels } from "@/lib/notify/externalChannelDispatch";
 
 export type NotificationAppendContext = {
@@ -55,7 +59,7 @@ export async function appendFamilyNotificationIfEligible(
   }
   const snapBase = () => buildConsentSnapshot(payload);
 
-  const name = parentLabel.trim() || "家人";
+  const name = sanitizeParentLabelForNotification(parentLabel.trim() || "家人");
   const nowIso = iso(now);
   const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
   const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString();
@@ -66,6 +70,7 @@ export async function appendFamilyNotificationIfEligible(
     message: string,
     meta: { kind: FamilyNotificationIntentKind },
   ): Promise<string> => {
+    const { title: safeTitle, message: safeMessage } = normalizeFamilyNotificationStrings(title, message);
     const id = crypto.randomUUID();
     await prisma.$executeRawUnsafe(
       `INSERT INTO "FamilyNotification" ("id","elderUserId","level","title","message","read","createdAt")
@@ -73,8 +78,8 @@ export async function appendFamilyNotificationIfEligible(
       id,
       elderUserId,
       level,
-      title,
-      message,
+      safeTitle,
+      safeMessage,
       false,
       nowIso,
     );
@@ -87,8 +92,8 @@ export async function appendFamilyNotificationIfEligible(
       contactId: null,
       channel: "app",
       status: "sent",
-      intendedTitle: title,
-      intendedMessage: message,
+      intendedTitle: safeTitle,
+      intendedMessage: safeMessage,
       sentAtIso: nowIso,
       failureReason: null,
       consentSnapshot: snapBase(),
@@ -99,8 +104,8 @@ export async function appendFamilyNotificationIfEligible(
       familyNotificationId: id,
       riskLevel: ctx.highestRisk,
       notificationType: meta.kind,
-      title,
-      message,
+      title: safeTitle,
+      message: safeMessage,
       consentSnapshot: snapBase(),
       allowedNotificationChannels: payload.allowedNotificationChannels,
     });
@@ -114,6 +119,7 @@ export async function appendFamilyNotificationIfEligible(
     title: string,
     message: string,
   ) => {
+    const { title: safeTitle, message: safeMessage } = normalizeFamilyNotificationStrings(title, message);
     const decision = evaluateFamilyNotificationConsent(payload, kind);
     if (!decision.allowed) {
       await logFamilyNotificationConsentBlock(prisma, {
@@ -121,14 +127,14 @@ export async function appendFamilyNotificationIfEligible(
         riskLevel: ctx.highestRisk,
         intendedKind: kind,
         intendedDbLevel: dbLevel,
-        intendedTitle: title,
-        intendedMessage: message,
+        intendedTitle: safeTitle,
+        intendedMessage: safeMessage,
         reason: decision.reason ?? "blocked_by_consent",
         consentSnapshot: { ...snapBase(), status: "blocked_by_consent" },
       });
       return;
     }
-    await insert(dbLevel, title, message, { kind });
+    await insert(dbLevel, safeTitle, safeMessage, { kind });
   };
 
   if (highestRisk === "L4") {

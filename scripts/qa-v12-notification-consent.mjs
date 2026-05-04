@@ -86,6 +86,41 @@ function hasL3RiskTitle(list) {
   return list.some((n) => /需要关注/.test(n.title ?? ""));
 }
 
+const uuidInPayloadRe =
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
+
+function priorityDLeakInNotifications(list) {
+  const leakKeys = /assistant_message|user_message|session_id|sessionId|ConversationSignal|rawText|聊天记录/i;
+  for (const n of list) {
+    const t = `${n.title ?? ""}${n.message ?? ""}`;
+    if (leakKeys.test(t)) return `forbidden:${t.slice(0, 120)}`;
+    if (uuidInPayloadRe.test(t)) return `uuid:${t.slice(0, 120)}`;
+  }
+  return null;
+}
+
+async function sectionPriorityDNotificationPayload() {
+  const eid = `v12-d-${randomUUID()}`;
+  const ghostId = randomUUID();
+  await postSettings(eid, {
+    parentDisplayName: `奶奶${ghostId}`,
+    familyAlertsEnabled: true,
+    allowedNotificationChannels: { app: true },
+    reminderTiers: { L1: true, L2: true, L3: true, L4: true },
+    emergencyContactMode: true,
+    emergencyContact: { phone: "13500000000" },
+  });
+  const chat = await postChat(eid, "我不想活了");
+  if (!chat.ok) return fail("pri_d", `chat HTTP ${chat.status}`);
+  await sleep(400);
+  const { json } = await getJson(`/api/child/notifications?elderUserId=${eid}`);
+  const list = json.notifications ?? [];
+  const bad = priorityDLeakInNotifications(list);
+  if (bad) return fail("pri_d", bad);
+  if (!list.some((n) => /紧急/.test(n.title ?? ""))) return fail("pri_d", "expected L4 row for Priority D scenario");
+  pass("pri_d", "notification payload has no UUID / transcript markers (Priority D)");
+}
+
 async function sectionPrivacyDashboard() {
   const { ok, json } = await getJson(`/api/child/dashboard?elderUserId=${elderSanity}&parentName=妈妈`);
   if (!ok) return fail("privacy", `dashboard HTTP`);
@@ -254,6 +289,7 @@ async function main() {
   console.log(`AnYu V1.2 notification + consent — ${baseUrl}\n`);
   await sectionPrivacyDashboard();
   await sectionNotificationTone();
+  await sectionPriorityDNotificationPayload();
   await sectionSettingsRoundtrip();
   await sectionL4BlockedWithoutEmergency();
   await sectionL4AllowedWithEmergencyOverride();

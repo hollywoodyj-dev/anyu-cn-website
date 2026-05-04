@@ -2,6 +2,11 @@ import { getPrismaClient } from "@/lib/server/prisma";
 import { appendFamilyNotificationIfEligible } from "@/lib/child-insights/familyNotifications";
 import { getChildParentLabel } from "@/lib/child-insights/childSettingsRepository";
 import { dailySignals, resolveChildStateDisplay } from "@/lib/child-insights/childUiCopy";
+import {
+  normalizeFamilyNotificationStrings,
+  scrubDailyKeyMessageLineForChild,
+  curatedMemoryDashboardExcerpt,
+} from "@/lib/child-insights/notificationPayloadPrivacy";
 import type { ChildNotificationItem, ConversationSignalRecord, DashboardCard } from "./types";
 
 let tablesReady = false;
@@ -123,12 +128,13 @@ async function fetchLatestMemoryTeaser(
   elderUserId: string,
 ): Promise<{ id: string; excerpt: string } | null> {
   const rows = (await prisma.$queryRawUnsafe(
-    `SELECT "id","content" FROM "MemoryCard" WHERE "elderUserId" = $1 ORDER BY "createdAt" DESC LIMIT 1`,
+    `SELECT "id","content","tag" FROM "MemoryCard" WHERE "elderUserId" = $1 ORDER BY "createdAt" DESC LIMIT 1`,
     elderUserId,
-  )) as Array<{ id: string; content: string }>;
+  )) as Array<{ id: string; content: string; tag: string }>;
   const r = rows[0];
   if (!r?.content) return null;
-  const excerpt = r.content.length > 72 ? `${r.content.slice(0, 72)}…` : r.content;
+  const excerpt = curatedMemoryDashboardExcerpt(r.content, r.tag === "family" ? "family" : "emotion");
+  if (!excerpt) return null;
   return { id: r.id, excerpt };
 }
 
@@ -342,7 +348,11 @@ export async function getDashboard(elderUserId: string, parentName = "妈妈"): 
         : summary.overallState === "watch"
           ? "watch"
           : "stable";
-  const summaryLine = parseJsonArray(summary.keyMessages)[0] ?? (state === "lonely" ? "今天有点孤单。" : "今天状态平稳。");
+  const keyMsgs = parseJsonArray(summary.keyMessages);
+  const firstCurated =
+    keyMsgs.map((m) => scrubDailyKeyMessageLineForChild(m)).find((x): x is string => Boolean(x)) ?? null;
+  const summaryLine =
+    firstCurated ?? (state === "lonely" ? "今天有点孤单。" : "今天状态平稳。");
   return {
     parentName,
     state,
@@ -396,7 +406,9 @@ export async function getDailyInsight(elderUserId: string): Promise<{
     lonelinessScore,
     healthSignals: Number(r?.healthSignals ?? 0),
     riskLevel: r?.riskLevel ?? "L1",
-    keyMessages: parseJsonArray(r?.keyMessages),
+    keyMessages: parseJsonArray(r?.keyMessages)
+      .map((m) => scrubDailyKeyMessageLineForChild(m))
+      .filter((x): x is string => Boolean(x)),
     suggestedAction,
     signals: dailySignals({ familyMentions, lonelinessScore, suggestedAction }),
   };
@@ -450,15 +462,18 @@ export async function getNotifications(elderUserId: string): Promise<ChildNotifi
     read: boolean;
     contactedAt: Date | null;
   }>;
-  return rows.map((r) => ({
-    id: r.id,
-    level: (["light", "watch", "risk"].includes(r.level) ? r.level : "light") as "light" | "watch" | "risk",
-    title: r.title,
-    message: r.message,
-    createdAt: new Date(r.createdAt).toISOString(),
-    read: Boolean(r.read),
-    contactedAt: r.contactedAt ? new Date(r.contactedAt).toISOString() : null,
-  }));
+  return rows.map((r) => {
+    const { title, message } = normalizeFamilyNotificationStrings(r.title, r.message);
+    return {
+      id: r.id,
+      level: (["light", "watch", "risk"].includes(r.level) ? r.level : "light") as "light" | "watch" | "risk",
+      title,
+      message,
+      createdAt: new Date(r.createdAt).toISOString(),
+      read: Boolean(r.read),
+      contactedAt: r.contactedAt ? new Date(r.contactedAt).toISOString() : null,
+    };
+  });
 }
 
 export async function markNotificationContacted(elderUserId: string, notificationId: string): Promise<boolean> {

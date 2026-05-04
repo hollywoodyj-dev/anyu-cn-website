@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeFamilyNotificationStrings } from "@/lib/child-insights/notificationPayloadPrivacy";
 import { queryNotificationDeliveryAttempts } from "@/lib/child-insights/notificationDeliveryAudit";
 import { ensureChildTables } from "@/lib/child-insights/repository";
 import { getPrismaClient } from "@/lib/server/prisma";
@@ -44,6 +45,10 @@ export async function GET(req: Request) {
     } catch {
       consentSnapshot = r.consentSnapshotRaw;
     }
+    const { title: intendedTitle, message: intendedMessage } = normalizeFamilyNotificationStrings(
+      r.intendedTitle,
+      r.intendedMessage,
+    );
     return {
       id: r.id,
       elderUserId: r.elderUserId,
@@ -53,8 +58,8 @@ export async function GET(req: Request) {
       contactId: r.contactId,
       channel: r.channel,
       status: r.status,
-      intendedTitle: r.intendedTitle,
-      intendedMessage: r.intendedMessage,
+      intendedTitle,
+      intendedMessage,
       createdAt: r.createdAt,
       sentAt: r.sentAt,
       failureReason: r.failureReason,

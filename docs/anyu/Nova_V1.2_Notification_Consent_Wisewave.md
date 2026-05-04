@@ -85,6 +85,8 @@
 
 **允许**：状态摘要、风险等级、温和建议行动、时间戳（与现有子女端 curated 原则一致）。
 
+**仓库进展**：`lib/child-insights/notificationPayloadPrivacy.ts` — `normalizeFamilyNotificationStrings` / `sanitizeParentLabelForNotification` 在 **`appendFamilyNotificationIfEligible`**（含 consent 拦截审计）与 **`getNotifications`** 出口、**`GET /api/child/qa/delivery-attempts`** 序列化处统一处理；**`signalExtractor`** 的 `memoryCandidate` 改为**固定 curated 短句**（不再写入 elder 原文切片）；**`DailySummary` → 子女端 dashboard / daily** 的 `keyMessages` 经 **`scrubDailyKeyMessageLineForChild`** 过滤长句与敏感键名；dashboard **记忆 teaser** 用 **`curatedMemoryDashboardExcerpt`** 避免展示过长或异常 blob。
+
 ---
 
 ## Priority E — Lumen QA（自动化建议）

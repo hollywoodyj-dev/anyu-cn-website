@@ -43,9 +43,10 @@ function isHealthSignal(input: ConversationSignalInput): boolean {
   return input.activeTopic === "health" || /头晕|不舒服|胸口|没胃口|痛|失眠/.test(input.text);
 }
 
+/** Curated labels only — never store elder verbatim (V1.2 Priority D). */
 function chooseMemoryCandidate(input: ConversationSignalInput): string | undefined {
-  if (/以前|当年|小时候|细个/.test(input.text)) return input.text.slice(0, 90);
-  if (/回来吃饭|返嚟食饭|想你|挂住|想家人/.test(input.text)) return input.text.slice(0, 90);
+  if (/以前|当年|小时候|细个/.test(input.text)) return "提到与过去有关的回忆";
+  if (/回来吃饭|返嚟食饭|想你|挂住|想家人/.test(input.text)) return "提到想念家人或盼联系";
   return undefined;
 }
 
