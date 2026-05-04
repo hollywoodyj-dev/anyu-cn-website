@@ -17,7 +17,7 @@
 - **「标记已联系」**（提醒单条）：客户端 `POST /api/child/notifications`，`action: "mark_contacted"` + `notificationId` → 更新 `FamilyNotification`。
 - **「我已联系」**（首页批量）：`action: "mark_today_contacted"` → 当日未标记的提醒写入 `contactedAt` 并置已读。
 - **JSON API**（供 App 或其它客户端）：`/api/child/dashboard`、`/api/child/daily`、`/api/child/notifications` 等仍可用；查询参数 `elderUserId` 默认 `elder_default`（与页面硬编码 id 可能不一致，见下）。
-- **V1.2 consent（初版）**：生成 `FamilyNotification` 前读 **`ChildSettings`**；拦截时写 **`FamilyNotificationConsentBlock`**。回归：`npm run qa:v12`。`/cn/child/consent` 的 **`ConsentForm`** 可编辑总开关、App 渠道、紧急模式、紧急电话、各提醒等级（含 L4）。
+- **V1.2 consent（初版）**：生成 `FamilyNotification` 前读 **`ChildSettings`**；拦截时写 **`FamilyNotificationConsentBlock`** + **`NotificationDeliveryAttempt`**。成功写入后：**App** 一条 `sent`，**email/sms/push** 各一条占位审计（`skipped_no_channel` 等）。回归：`npm run qa:v12`。`/cn/child/consent` 的 **`ConsentForm`** 可编辑总开关、各渠道、紧急模式、紧急电话、各提醒等级（含 L4）。
 
 ---
 

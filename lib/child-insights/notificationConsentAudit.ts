@@ -1,7 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
+import { insertNotificationDeliveryAttempt } from "@/lib/child-insights/notificationDeliveryAudit";
 
 export type ConsentBlockLogInput = {
   elderUserId: string;
+  /** Daily ceiling risk (L1–L4) for audit alignment with Wisewave Priority C. */
+  riskLevel: string;
   intendedKind: string;
   intendedDbLevel: string;
   intendedTitle: string;
@@ -28,4 +31,19 @@ export async function logFamilyNotificationConsentBlock(
     input.reason,
     snap,
   );
+
+  await insertNotificationDeliveryAttempt(prisma, {
+    elderUserId: input.elderUserId,
+    familyNotificationId: null,
+    riskLevel: input.riskLevel,
+    notificationType: input.intendedKind,
+    contactId: null,
+    channel: "app",
+    status: "blocked_by_consent",
+    intendedTitle: input.intendedTitle,
+    intendedMessage: input.intendedMessage,
+    sentAtIso: null,
+    failureReason: input.reason,
+    consentSnapshot: input.consentSnapshot,
+  });
 }

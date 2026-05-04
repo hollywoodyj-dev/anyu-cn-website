@@ -64,8 +64,47 @@ export function ConsentForm() {
           />
           App 内提醒（当前网页 / App 列表）
         </label>
+        <label className="mt-2 flex items-center gap-2 text-sm text-[var(--anyu-ink-muted)]">
+          <input
+            type="checkbox"
+            checked={channels.email !== false}
+            onChange={(e) =>
+              setDraft({
+                ...draft,
+                allowedNotificationChannels: { ...channels, email: e.target.checked },
+              })
+            }
+          />
+          邮件（占位：需配置 ANYU_NOTIFY_EMAIL_ENABLED 与后续 SMTP 才实发）
+        </label>
+        <label className="mt-2 flex items-center gap-2 text-sm text-[var(--anyu-ink-muted)]">
+          <input
+            type="checkbox"
+            checked={channels.sms !== false}
+            onChange={(e) =>
+              setDraft({
+                ...draft,
+                allowedNotificationChannels: { ...channels, sms: e.target.checked },
+              })
+            }
+          />
+          短信（占位：需 ANYU_NOTIFY_SMS_ENABLED）
+        </label>
+        <label className="mt-2 flex items-center gap-2 text-sm text-[var(--anyu-ink-muted)]">
+          <input
+            type="checkbox"
+            checked={channels.push !== false}
+            onChange={(e) =>
+              setDraft({
+                ...draft,
+                allowedNotificationChannels: { ...channels, push: e.target.checked },
+              })
+            }
+          />
+          推送（占位：需 ANYU_NOTIFY_PUSH_ENABLED）
+        </label>
         <p className="mt-1 text-xs text-[var(--anyu-ink-muted)]">
-          短信、邮件、推送等外发渠道上线后也会在此汇总；未开通前保持关闭即可。
+          外发渠道关闭时，审计表会记录为 skipped；不会静默外发。
         </p>
       </div>
 

@@ -6,7 +6,9 @@ import {
 } from "@/lib/child-insights/consentGate";
 import { getChildSettingsPayload } from "@/lib/child-insights/childSettingsRepository";
 import { logFamilyNotificationConsentBlock } from "@/lib/child-insights/notificationConsentAudit";
+import { insertNotificationDeliveryAttempt } from "@/lib/child-insights/notificationDeliveryAudit";
 import type { ChildSettingsPayload } from "@/lib/child-insights/types";
+import { dispatchExternalNotificationChannels } from "@/lib/notify/externalChannelDispatch";
 
 export type NotificationAppendContext = {
   elderUserId: string;
@@ -39,7 +41,7 @@ async function countNotificationsSince(
   return Number(rows[0]?.c ?? 0);
 }
 
-/** Wisewave V1.1: gentle copy, dedupe; L4 immediate; L3 throttled; L1/L2 daily caps. V1.2: consent gate before insert. */
+/** Wisewave V1.1: gentle copy, dedupe; L4 immediate; L3 throttled; L1/L2 daily caps. V1.2: consent + delivery audit + external channel stubs. */
 export async function appendFamilyNotificationIfEligible(
   prisma: PrismaClient,
   ctx: NotificationAppendContext,
@@ -58,11 +60,17 @@ export async function appendFamilyNotificationIfEligible(
   const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
   const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString();
 
-  const insert = async (level: "light" | "watch" | "risk", title: string, message: string) => {
+  const insert = async (
+    level: "light" | "watch" | "risk",
+    title: string,
+    message: string,
+    meta: { kind: FamilyNotificationIntentKind },
+  ): Promise<string> => {
+    const id = crypto.randomUUID();
     await prisma.$executeRawUnsafe(
       `INSERT INTO "FamilyNotification" ("id","elderUserId","level","title","message","read","createdAt")
        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      crypto.randomUUID(),
+      id,
       elderUserId,
       level,
       title,
@@ -70,6 +78,34 @@ export async function appendFamilyNotificationIfEligible(
       false,
       nowIso,
     );
+
+    await insertNotificationDeliveryAttempt(prisma, {
+      elderUserId,
+      familyNotificationId: id,
+      riskLevel: ctx.highestRisk,
+      notificationType: meta.kind,
+      contactId: null,
+      channel: "app",
+      status: "sent",
+      intendedTitle: title,
+      intendedMessage: message,
+      sentAtIso: nowIso,
+      failureReason: null,
+      consentSnapshot: snapBase(),
+    });
+
+    await dispatchExternalNotificationChannels(prisma, {
+      elderUserId,
+      familyNotificationId: id,
+      riskLevel: ctx.highestRisk,
+      notificationType: meta.kind,
+      title,
+      message,
+      consentSnapshot: snapBase(),
+      allowedNotificationChannels: payload.allowedNotificationChannels,
+    });
+
+    return id;
   };
 
   const gatedInsert = async (
@@ -82,6 +118,7 @@ export async function appendFamilyNotificationIfEligible(
     if (!decision.allowed) {
       await logFamilyNotificationConsentBlock(prisma, {
         elderUserId,
+        riskLevel: ctx.highestRisk,
         intendedKind: kind,
         intendedDbLevel: dbLevel,
         intendedTitle: title,
@@ -91,7 +128,7 @@ export async function appendFamilyNotificationIfEligible(
       });
       return;
     }
-    await insert(dbLevel, title, message);
+    await insert(dbLevel, title, message, { kind });
   };
 
   if (highestRisk === "L4") {

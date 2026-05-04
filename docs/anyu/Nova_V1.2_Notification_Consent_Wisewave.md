@@ -49,6 +49,10 @@
    - `skipped_no_channel`  
    - `blocked_by_consent`  
 
+**仓库进展（初版）**：`lib/notify/types.ts`、`lib/notify/channelAdapters.ts`（`attemptEmailDispatch` / `attemptSmsDispatch` / `attemptPushDispatch`）、`lib/notify/externalChannelDispatch.ts`。在 **`FamilyNotification` 插入成功后**，对 **email / sms / push** 各写一条 **`NotificationDeliveryAttempt`**：渠道在设置中关闭 → `skipped_no_channel` + `*_channel_disabled_in_settings`；未配置启用 env → `skipped_no_channel` + `ANYU_NOTIFY_*_ENABLED unset`；已启用 env 仍为占位 → `skipped_no_channel` + `*_transport_not_implemented_v1_2`。  
+**环境变量（占位闸，不设则绝不外发）**：`ANYU_NOTIFY_EMAIL_ENABLED`、`ANYU_NOTIFY_SMS_ENABLED`、`ANYU_NOTIFY_PUSH_ENABLED`（任意非空即视为「将来可接」；当前仍不调用真实 SMTP/短信/FCM）。  
+**UI**：`/cn/child/consent` 中 **`ConsentForm`** 可对 App / 邮件 / 短信 / 推送 分别勾选（写入 `allowedNotificationChannels`）。
+
 ---
 
 ## Priority C — Alert audit trail
@@ -65,6 +69,11 @@
 - `sentAt`  
 - `failureReason`  
 - **`consentSnapshot`**（发送时 consent 的只读快照，用于争议与合规核对）
+
+**仓库进展（初版）**：新建表 **`NotificationDeliveryAttempt`**（`ensureChildTables`），由 **`lib/child-insights/notificationDeliveryAudit.ts`** 的 **`insertNotificationDeliveryAttempt`** 写入。  
+- **App 成功**：`FamilyNotification` 插入后写一条 `channel=app`、`status=sent`、`familyNotificationId` 关联、`sentAt` 填入。  
+- **外发占位**：同上 ID 下各写 `email` / `sms` / `push` 一条，状态见 Priority B。  
+- **Consent 拦截**：保留 **`FamilyNotificationConsentBlock`**；同时在 **`logFamilyNotificationConsentBlock`** 内追加一条 **`NotificationDeliveryAttempt`**（`channel=app`、`status=blocked_by_consent`、`familyNotificationId` 为空），便于与成功路径 **同表对账**。
 
 ---
 

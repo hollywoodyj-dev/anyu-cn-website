@@ -80,6 +80,25 @@ export async function ensureChildTables(): Promise<void> {
       "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS "FamilyNotificationConsentBlock_elderUserId_createdAt_idx" ON "FamilyNotificationConsentBlock" ("elderUserId","createdAt");
+
+    CREATE TABLE IF NOT EXISTS "NotificationDeliveryAttempt" (
+      "id" TEXT PRIMARY KEY,
+      "elderUserId" TEXT NOT NULL,
+      "familyNotificationId" TEXT,
+      "riskLevel" TEXT NOT NULL,
+      "notificationType" TEXT NOT NULL,
+      "contactId" TEXT,
+      "channel" TEXT NOT NULL,
+      "status" TEXT NOT NULL,
+      "intendedTitle" TEXT NOT NULL,
+      "intendedMessage" TEXT NOT NULL,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "sentAt" TIMESTAMP,
+      "failureReason" TEXT,
+      "consentSnapshot" TEXT NOT NULL DEFAULT '{}'
+    );
+    CREATE INDEX IF NOT EXISTS "NotificationDeliveryAttempt_elderUserId_createdAt_idx" ON "NotificationDeliveryAttempt" ("elderUserId","createdAt");
+    CREATE INDEX IF NOT EXISTS "NotificationDeliveryAttempt_familyNotificationId_idx" ON "NotificationDeliveryAttempt" ("familyNotificationId");
   `);
   try {
     await prisma.$executeRawUnsafe(`
