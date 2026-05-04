@@ -19,7 +19,7 @@
 
 **仓库进展（初版已实现）**：`appendFamilyNotificationIfEligible` 在写入 `FamilyNotification` 前读取 **`ChildSettings`**，校验 **`familyAlertsEnabled`**、**`allowedNotificationChannels.app`**、**`reminderTiers`（L1–L4）**、**联系人 `active`**；不通过时写入 **`FamilyNotificationConsentBlock`**（含 `reason` + `consentSnapshot`），状态语义为 **`blocked_by_consent`**。**L4**：在 **`emergencyContactMode`** 或已填 **`emergencyContact.phone`** 时，**不因** `reminderTiers.L4 === false` 拦截（Wisewave「紧急模式下 L4 不可完全关闭」）。实现文件：`lib/child-insights/consentGate.ts`、`notificationConsentAudit.ts`、`familyNotifications.ts`、`repository.ensureChildTables`。
 
-**Lumen host 验证（2026-04-30）**：`npm run qa:v12` 对 **https://anyu-cn-website.vercel.app** 全项通过（`failed=0`）；记录见 **`Lumen_QA_V1.2_Sync_Notes.md`**。
+**Lumen host 验证（2026-04-30）**：`npm run qa:v12` 对 **https://anyu-cn-website.vercel.app** 全项通过（`failed=0`）；含 **Priority B/C 合并后** 再跑一遍仍 `failed=0`（**`a3367d8`**）。记录见 **`Lumen_QA_V1.2_Sync_Notes.md`**。
 
 1. 以 **ChildSettings / ConsentSetting**（或当前等价存储）为**单一事实来源**。
 2. 在发送任何家庭通知**之前**校验：

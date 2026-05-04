@@ -80,3 +80,28 @@ npm run qa:v12
 | inactive contacts block | ✅ |
 
 **结论（Lumen）**：对 **Priority A consent enforcement + `qa:v12` host 验证** 而言，V1.2 相关实现已在 host 上 **真实可用且通过**。
+
+---
+
+## Lumen host 验证 — Priority B/C 合并后（已通过）
+
+**记录日期**：2026-04-30（Lumen 回报）。  
+**Repo**：`main` @ **`a3367d8`** — `feat(v1.2): Priority B placeholder channels + C delivery audit table`（历史中含 **`5c50b75`** consent 初版）。  
+**Host**：https://anyu-cn-website.vercel.app  
+**命令**：`QA_BASE_URL=https://anyu-cn-website.vercel.app npm run qa:v12`
+
+**结果**：**全部 PASS**，`failed=0`。
+
+**Lumen 确认**：
+
+- **Repo 同步**：`lib/notify/channelAdapters.ts`、`lib/notify/externalChannelDispatch.ts`、`lib/child-insights/notificationDeliveryAudit.ts`、`lib/child-insights/familyNotifications.ts` 等预期文件在 `main` 上存在。  
+- **Host 回归 smoke**：Priority A 的 consent 行为在 B/C 合并后 **仍在 host 上通过**；**未**破坏既有 `qa:v12` smoke。
+
+**此轮仍未证明（与 Nova 备注一致，Lumen 认可为 pending）**：
+
+- `NotificationDeliveryAttempt` **精确行数**或 SQL 断言  
+- **各 channel 审计行**内容与状态细节  
+- **`contactId`** 选择逻辑  
+- **真实外发**（SMTP / 短信 / Push）行为  
+
+**Lumen 判断（摘要）**：合并从 **host 行为侧**看 **稳定**；若产品要验收审计表本身，需另加 **deeper audit-table verification**（只读 API、集成测试或受控 DB 断言）。
