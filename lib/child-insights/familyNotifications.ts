@@ -1,4 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
+import {
+  buildConsentSnapshot,
+  evaluateFamilyNotificationConsent,
+  type FamilyNotificationIntentKind,
+} from "@/lib/child-insights/consentGate";
+import { getChildSettingsPayload } from "@/lib/child-insights/childSettingsRepository";
+import { logFamilyNotificationConsentBlock } from "@/lib/child-insights/notificationConsentAudit";
+import type { ChildSettingsPayload } from "@/lib/child-insights/types";
 
 export type NotificationAppendContext = {
   elderUserId: string;
@@ -31,12 +39,20 @@ async function countNotificationsSince(
   return Number(rows[0]?.c ?? 0);
 }
 
-/** Wisewave V1.1: gentle copy, dedupe; L4 immediate; L3 throttled; L1/L2 daily caps. */
+/** Wisewave V1.1: gentle copy, dedupe; L4 immediate; L3 throttled; L1/L2 daily caps. V1.2: consent gate before insert. */
 export async function appendFamilyNotificationIfEligible(
   prisma: PrismaClient,
   ctx: NotificationAppendContext,
 ): Promise<void> {
   const { elderUserId, parentLabel, highestRisk, lonelyTurnsToday, familyMentionsToday, now } = ctx;
+  let payload: ChildSettingsPayload = {};
+  try {
+    payload = await getChildSettingsPayload(elderUserId);
+  } catch {
+    payload = {};
+  }
+  const snapBase = () => buildConsentSnapshot(payload);
+
   const name = parentLabel.trim() || "家人";
   const nowIso = iso(now);
   const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
@@ -56,8 +72,31 @@ export async function appendFamilyNotificationIfEligible(
     );
   };
 
+  const gatedInsert = async (
+    kind: FamilyNotificationIntentKind,
+    dbLevel: "light" | "watch" | "risk",
+    title: string,
+    message: string,
+  ) => {
+    const decision = evaluateFamilyNotificationConsent(payload, kind);
+    if (!decision.allowed) {
+      await logFamilyNotificationConsentBlock(prisma, {
+        elderUserId,
+        intendedKind: kind,
+        intendedDbLevel: dbLevel,
+        intendedTitle: title,
+        intendedMessage: message,
+        reason: decision.reason ?? "blocked_by_consent",
+        consentSnapshot: { ...snapBase(), status: "blocked_by_consent" },
+      });
+      return;
+    }
+    await insert(dbLevel, title, message);
+  };
+
   if (highestRisk === "L4") {
-    await insert(
+    await gatedInsert(
+      "L4_emergency",
       "risk",
       "紧急提醒",
       `紧急提醒：请尽快联系${name}，或联系紧急联系人。${SUGGESTED_ACTION_HINT}`,
@@ -68,7 +107,8 @@ export async function appendFamilyNotificationIfEligible(
   if (highestRisk === "L3") {
     const recentRisk = await countNotificationsSince(prisma, elderUserId, sixHoursAgo, "risk");
     if (recentRisk === 0) {
-      await insert(
+      await gatedInsert(
+        "L3_risk",
         "risk",
         "需要关注",
         `她今天表达了明显低落或危险情绪。建议尽快主动联系。${SUGGESTED_ACTION_HINT}`,
@@ -86,18 +126,19 @@ export async function appendFamilyNotificationIfEligible(
   if (lonelyTurnsToday >= 2 && familyMentionsToday >= 2) {
     const watchToday = await countNotificationsSince(prisma, elderUserId, dayStart, "watch");
     if (watchToday === 0) {
-      await insert("watch", "关注提醒", "她最近几天状态有些低落。可以找个时间联系一下。");
+      await gatedInsert("watch", "watch", "关注提醒", "她最近几天状态有些低落。可以找个时间联系一下。");
     }
     return;
   }
 
   if (familyMentionsToday >= 2 && lonelyTurnsToday < 2) {
-    await insert("light", "轻提醒", `${name}今天有点想你。`);
+    await gatedInsert("light", "light", "轻提醒", `${name}今天有点想你。`);
     return;
   }
 
   if (lonelyTurnsToday >= 2) {
-    await insert(
+    await gatedInsert(
+      "light",
       "light",
       "轻提醒",
       `${name}今天有点孤单。有空的话，可以温柔问一句：今天吃了点什么？`,

@@ -29,38 +29,106 @@ export function ConsentForm() {
   }
 
   const tiers = draft.reminderTiers ?? { L1: true, L2: true, L3: true, L4: true };
+  const channels = draft.allowedNotificationChannels ?? { app: true, push: false, sms: false, email: false };
 
   if (loading) {
     return <p className="text-sm text-[var(--anyu-ink-muted)]">加载中…</p>;
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-[var(--anyu-border)] bg-[var(--anyu-bg-card)] p-5 space-y-4">
-      <p className="text-sm font-medium text-[var(--anyu-ink)]">提醒等级（示意，可按家庭需要调整）</p>
-      <div className="space-y-2 text-sm text-[var(--anyu-ink-muted)]">
-        {(
-          [
-            ["L1", "仅 App 内轻提醒"],
-            ["L2", "温和通知（每日有上限）"],
-            ["L3", "较强提醒（风险时优先）"],
-            ["L4", "紧急路径（不建议关闭）"],
-          ] as const
-        ).map(([k, label]) => (
-          <label key={k} className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={tiers[k] !== false}
-              disabled={k === "L4"}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  reminderTiers: { ...tiers, [k]: e.target.checked },
-                })
-              }
-            />
-            <span>{label}</span>
-          </label>
-        ))}
+    <section className="mt-6 rounded-2xl border border-[var(--anyu-border)] bg-[var(--anyu-bg-card)] p-5 space-y-5">
+      <div>
+        <p className="text-sm font-medium text-[var(--anyu-ink)] mb-2">家庭通知总开关</p>
+        <label className="flex items-center gap-2 text-sm text-[var(--anyu-ink-muted)]">
+          <input
+            type="checkbox"
+            checked={draft.familyAlertsEnabled !== false}
+            onChange={(e) => setDraft({ ...draft, familyAlertsEnabled: e.target.checked })}
+          />
+          允许向家人发送整理后的提醒（关闭后不会生成新的家庭通知）
+        </label>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-[var(--anyu-ink)] mb-2">通知渠道（V1.2）</p>
+        <label className="flex items-center gap-2 text-sm text-[var(--anyu-ink-muted)]">
+          <input
+            type="checkbox"
+            checked={channels.app !== false}
+            onChange={(e) =>
+              setDraft({
+                ...draft,
+                allowedNotificationChannels: { ...channels, app: e.target.checked },
+              })
+            }
+          />
+          App 内提醒（当前网页 / App 列表）
+        </label>
+        <p className="mt-1 text-xs text-[var(--anyu-ink-muted)]">
+          短信、邮件、推送等外发渠道上线后也会在此汇总；未开通前保持关闭即可。
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-[var(--anyu-ink)] mb-2">紧急与 L4 提醒</p>
+        <label className="flex items-center gap-2 text-sm text-[var(--anyu-ink-muted)]">
+          <input
+            type="checkbox"
+            checked={draft.emergencyContactMode === true}
+            onChange={(e) => setDraft({ ...draft, emergencyContactMode: e.target.checked })}
+          />
+          紧急联系人模式（开启后，即使关闭「L4 紧急」等级，仍会在极端风险时尝试通知）
+        </label>
+        <label className="mt-3 block text-xs text-[var(--anyu-ink-muted)]">
+          紧急联系电话（可选）
+          <input
+            type="tel"
+            className="mt-1 w-full rounded-lg border border-[var(--anyu-border)] bg-white px-3 py-2 text-sm text-[var(--anyu-ink)]"
+            placeholder="用于紧急路径登记，不会在子女端展示完整对话"
+            value={draft.emergencyContact?.phone ?? ""}
+            onChange={(e) =>
+              setDraft({
+                ...draft,
+                emergencyContact: {
+                  ...draft.emergencyContact,
+                  name: draft.emergencyContact?.name,
+                  phone: e.target.value,
+                },
+              })
+            }
+          />
+        </label>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-[var(--anyu-ink)]">提醒等级（示意，可按家庭需要调整）</p>
+        <p className="mt-1 text-xs text-[var(--anyu-ink-muted)] leading-relaxed">
+          关闭某一等级后，系统不会为该等级生成新的家庭通知；L4 在「紧急联系人模式」或填写了紧急电话时仍可能发送紧急提醒。
+        </p>
+        <div className="mt-2 space-y-2 text-sm text-[var(--anyu-ink-muted)]">
+          {(
+            [
+              ["L1", "仅 App 内轻提醒"],
+              ["L2", "温和通知（每日有上限）"],
+              ["L3", "较强提醒（风险时优先）"],
+              ["L4", "紧急路径"],
+            ] as const
+          ).map(([k, label]) => (
+            <label key={k} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={tiers[k] !== false}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    reminderTiers: { ...tiers, [k]: e.target.checked },
+                  })
+                }
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <div>

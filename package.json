@@ -12,7 +12,8 @@
     "logo:transparent": "node scripts/anyu-logo-remove-black.mjs",
     "eval:validate": "node scripts/validate-anyu-training-datasets.mjs",
     "eval:validate:v2": "node scripts/validate-anyu-training-v2.mjs",
-    "eval:smoke:v2": "node scripts/smoke-anyu-v2-multiturn.mjs"
+    "eval:smoke:v2": "node scripts/smoke-anyu-v2-multiturn.mjs",
+    "qa:v12": "node scripts/qa-v12-notification-consent.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

@@ -28,6 +28,8 @@ export type ChildContact = {
   phone?: string;
   email?: string;
   priority: number;
+  /** When `false`, do not treat as an active notification recipient. Default / omitted = active. */
+  active?: boolean;
 };
 
 export type ChildStateDisplay =
@@ -56,6 +58,14 @@ export type ChildSettingsPayload = {
   memoryVisibility?: "curated" | "hidden" | "summary_only";
   emergencyContact?: { name?: string; phone?: string };
   consentAcknowledgedAt?: string;
+  /** Master switch for family-side notifications; omit = enabled (backward compatible). */
+  familyAlertsEnabled?: boolean;
+  allowedNotificationChannels?: { app?: boolean; push?: boolean; sms?: boolean; email?: boolean };
+  /**
+   * When true, L4 emergency notifications cannot be suppressed by `reminderTiers.L4 === false`
+   * (Wisewave V1.2). Emergency contact phone alone also enables this override.
+   */
+  emergencyContactMode?: boolean;
 };
 
 export type DashboardCard = {
