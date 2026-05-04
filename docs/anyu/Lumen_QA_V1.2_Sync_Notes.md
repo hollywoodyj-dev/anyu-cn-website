@@ -105,3 +105,14 @@ npm run qa:v12
 - **真实外发**（SMTP / 短信 / Push）行为  
 
 **Lumen 判断（摘要）**：合并从 **host 行为侧**看 **稳定**；若产品要验收审计表本身，需另加 **deeper audit-table verification**（只读 API、集成测试或受控 DB 断言）。
+
+### 只读 QA API（`ANYU_QA_SECRET`）
+
+部署时在 **服务端**设置 **`ANYU_QA_SECRET`**（勿提交到 git）。请求头携带 **`x-anyu-qa-secret: <同值>`**；若未配置 secret 或 header 不匹配，返回 **404**（不区分原因）。
+
+```http
+GET /api/child/qa/delivery-attempts?elderUserId=elder_demo&limit=50
+x-anyu-qa-secret: <ANYU_QA_SECRET>
+```
+
+响应：`{ elderUserId, count, attempts }`，每条含 `channel`、`status`、`familyNotificationId`、`riskLevel`、`notificationType`、`consentSnapshot`（JSON）等。`limit` 默认 50，最大 100。

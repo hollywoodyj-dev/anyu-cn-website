@@ -53,6 +53,8 @@
 **环境变量（占位闸，不设则绝不外发）**：`ANYU_NOTIFY_EMAIL_ENABLED`、`ANYU_NOTIFY_SMS_ENABLED`、`ANYU_NOTIFY_PUSH_ENABLED`（任意非空即视为「将来可接」；当前仍不调用真实 SMTP/短信/FCM）。  
 **UI**：`/cn/child/consent` 中 **`ConsentForm`** 可对 App / 邮件 / 短信 / 推送 分别勾选（写入 `allowedNotificationChannels`）。
 
+**QA 只读 API**：`GET /api/child/qa/delivery-attempts?elderUserId=…&limit=…`，请求头 **`x-anyu-qa-secret`** 须与 **`ANYU_QA_SECRET`** 一致；未配置或错误时 **404**。见 **`Lumen_QA_V1.2_Sync_Notes.md`**。
+
 ---
 
 ## Priority C — Alert audit trail
