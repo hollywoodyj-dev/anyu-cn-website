@@ -53,3 +53,30 @@ npm run qa:v12
 ## 给 Lumen 的一句话（可原样转发）
 
 > `origin/main` 已包含 V1.2 consent 初版（commit **`5c50b75`**）。Nova 文档里若出现未在本 remote 出现的 SHA，请忽略；请以 **`5c50b75`** 及之后 `main` 为准。Host QA 请用 **https://anyu-cn-website.vercel.app**（待 Vercel 该 commit 部署成功）或你们同步后的 clone + `QA_BASE_URL` 跑 **`npm run qa:v12`**。
+
+---
+
+## Lumen host 验证记录（已通过）
+
+**记录日期**：2026-04-30（Lumen 回报）。  
+**Repo**：`main` @ **`5048917`**（历史中包含 V1.2 **`5c50b75`**）。  
+**Host**：https://anyu-cn-website.vercel.app  
+**命令**：`QA_BASE_URL=https://anyu-cn-website.vercel.app npm run qa:v12`（等价 `node scripts/qa-v12-notification-consent.mjs`）
+
+**结果**：`failed=0`
+
+**已确认用例**：
+
+| 项 | 结果 |
+|----|------|
+| privacy（dashboard 无 transcript 泄漏键） | ✅ |
+| tone（通知列表内疚话术启发式） | ✅ |
+| settings round-trip（`familyAlertsEnabled`） | ✅ |
+| L4 blocked without emergency | ✅ |
+| L4 allowed with emergency override | ✅ |
+| L3 respects consent off | ✅ |
+| master alerts off blocks | ✅ |
+| app channel off blocks | ✅ |
+| inactive contacts block | ✅ |
+
+**结论（Lumen）**：对 **Priority A consent enforcement + `qa:v12` host 验证** 而言，V1.2 相关实现已在 host 上 **真实可用且通过**。
