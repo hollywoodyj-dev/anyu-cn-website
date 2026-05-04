@@ -26,6 +26,7 @@ const nav = [
   { href: "/cn/product", label: "产品介绍" },
   { href: "/cn/lamp-voice", label: "安语灯" },
   { href: "/cn/for-family", label: "子女端 App" },
+  { href: "/cn/child", label: "家人页" },
   { href: "/cn/safety", label: "安全与隐私" },
   { href: "/cn/about", label: "关于我们" },
 ] as const;
@@ -72,6 +73,12 @@ export default function CnLayout({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
             <Link
+              href="/cn/child"
+              className="shrink-0 text-sm font-medium text-[#8B7E74] transition-colors hover:text-[#2D2D2D] md:hidden"
+            >
+              家人页
+            </Link>
+            <Link
               href="/cn/product"
               className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#D4A574] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#C4956A]"
             >
@@ -92,6 +99,9 @@ export default function CnLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex flex-wrap items-center gap-6">
+            <Link href="/cn/child" className="transition-colors hover:text-[#2D2D2D]">
+              家人页
+            </Link>
             <Link href="/cn/ethics" className="transition-colors hover:text-[#2D2D2D]">
               我们的原则
             </Link>

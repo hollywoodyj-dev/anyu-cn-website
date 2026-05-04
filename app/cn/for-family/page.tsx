@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { AlertTriangle, Clock3, PhoneCall, TrendingUp } from "lucide-react";
 import { CTAButton, EmotionList, TextBlock } from "@/components/anyu";
 
@@ -12,6 +13,12 @@ export default function ForFamilyPage() {
         </h1>
         <p className="text-[var(--anyu-ink-muted)]">
           不替代照护责任，只把需要你在场的时候，提前告诉你。
+        </p>
+        <p className="text-sm text-[var(--anyu-ink-muted)]">
+          <Link href="/cn/child" className="font-medium text-[var(--anyu-accent)] underline-offset-4 hover:underline">
+            在浏览器打开家人页
+          </Link>
+          ，查看今日近况与提醒（演示数据）。
         </p>
       </header>
 
@@ -109,6 +116,7 @@ export default function ForFamilyPage() {
       </section>
 
       <div className="flex flex-wrap gap-3 pt-2">
+        <CTAButton href="/cn/child">打开家人页</CTAButton>
         <CTAButton href="/cn/lamp-voice">进入语音体验</CTAButton>
         <CTAButton href="/cn/product">绑定父母设备</CTAButton>
       </div>
