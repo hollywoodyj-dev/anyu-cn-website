@@ -112,31 +112,41 @@ npm run qa:v12:close
 
 ---
 
-## Priority E — 轻提醒 cap + L3 dedupe + 串联回归（模板）
+## Lumen host 验证 — Priority E 收口（已通过 · 2026-04-30）
 
-以下 **`npm run qa:v12`** 已包含 **light_cap**、**l3_dedupe**、**pri_d** 等节；**`npm run qa:v12:close`** 在 v12 全部 PASS 后继续跑四条链式脚本。
+**记录日期**：2026-04-30（Lumen 回报，**真实 host** 非仅 Nova 备注）。  
+**Repo**：`main` @ **`7dc16a5`** — `test(qa): Priority E — light cap, L3 dedupe, qa:v12:close chain`。  
+**Host**：https://anyu-cn-website.vercel.app  
 
-**记录日期**：____（Lumen 填写）  
-**Repo**：`main` @ **`________`**  
-**Host 或本地**：`QA_BASE_URL=________________`  
-**命令**：
+**命令 1**：`QA_BASE_URL=https://anyu-cn-website.vercel.app npm run qa:v12`  
+**结果**：`failed=0`
 
-```bash
-QA_BASE_URL=... npm run qa:v12
-QA_BASE_URL=... npm run qa:v12:close
-```
+**命令 2**：`QA_BASE_URL=https://anyu-cn-website.vercel.app npm run qa:v12:close`  
+**结果**：v12 通过后链式脚本 **全部 PASS**，日志含 **Priority E chained regression completed**，无失败。
 
-**结果**：`failed=____`（两条命令分别记录或均为 0）
+**Lumen 已确认清单**：
 
-| 节 | 说明 |
-|----|------|
-| light_cap | 同日 lonely 路径下 **至多 2** 条 `light`「轻提醒」 |
-| l3_dedupe | 6h 内两次 L3 → **至多 1** 条「需要关注」 |
-| （chained） | v7 → v7.1 → v11 tone → v11 host 全 PASS |
+| # | 项 | 结果 |
+|---|----|------|
+| 1 | L3 respects consent | ✅ |
+| 2 | L4 emergency path 不会静默消失 | ✅ |
+| 3 | Dashboard 无 transcript 泄漏 | ✅ |
+| 4 | Light reminders capped（`light_cap`） | ✅ |
+| 5 | L3 dedupe（`l3_dedupe`） | ✅ |
+| 6 | L4 产生紧急通知 | ✅ |
+| 7 | Disabled contact 不收通知 | ✅ |
+| 8 | 无 guilt-trip 话术 | ✅ |
+| 9 | 无「必须 / 赶紧 / 你不管她就危险了」类措辞 | ✅ |
+| 10 | V7.1 + V1.1 串联回归（v7 → v7.1 → v11 tone → v11 host） | ✅ |
+| — | Priority D 隐私 payload（`pri_d`） | ✅ |
 
-**结论**：Priority E 自动化与串联回归 **完成 / 未完成**（Lumen 勾选）。
+**链式脚本（`qa:v12:close`）**：`qa-v7-first-response.mjs` ✅ · `qa-v7.1-family-state-regression.mjs` ✅ · `qa-v11-tone-watchpoints.mjs` ✅ · `qa-v11-host-sanity.mjs` ✅  
 
-### 只读 QA API（`ANYU_QA_SECRET`）
+**结论（Lumen）**：**Priority E 已关闭。** V1.2 QA 在 host 上完成 **真实收口跑通**，不再仅为部分 smoke。
+
+---
+
+## 只读 QA API（`ANYU_QA_SECRET`）
 
 部署时在 **服务端**设置 **`ANYU_QA_SECRET`**（勿提交到 git）。请求头携带 **`x-anyu-qa-secret: <同值>`**；若未配置 secret 或 header 不匹配，返回 **404**（不区分原因）。
 

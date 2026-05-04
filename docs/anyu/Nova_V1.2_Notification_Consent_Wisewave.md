@@ -95,7 +95,8 @@
 
 **当前脚本已覆盖（HTTP 黑盒）**：dashboard 隐私键扫描；通知列表内疚话术启发式；**Priority D**（UUID / transcript 标记）；settings 往返；consent 变体（L4 无紧急拦截、有紧急放行、L3 tier 关、总开关关、App 渠道关、inactive 联系人）；**轻提醒每日 cap**（`light` +「轻提醒」标题 ≤ 2 / 日，lonely 路径）；**L3 六小时内去重**（两次 L3 聊天 → 至多一条「需要关注」）；**Priority E 串联**：`qa:v7-first-response` → `qa-v7.1-family-state-regression` → `qa-v11-tone-watchpoints` → `qa-v11-host-sanity`（由 `qa:v12:close` 或 `QA_RUN_CHAINED_REGRESSION=1` 触发）。
 
-**Lumen 收口**：在可访问的 `QA_BASE_URL` 上 **`npm run qa:v12`** 与 **`npm run qa:v12:close`** 均 `failed=0` 后，将命令与 commit 记入 **`Lumen_QA_V1.2_Sync_Notes.md`**。
+**Lumen 收口**：在可访问的 `QA_BASE_URL` 上 **`npm run qa:v12`** 与 **`npm run qa:v12:close`** 均 `failed=0` 后，将命令与 commit 记入 **`Lumen_QA_V1.2_Sync_Notes.md`**。  
+**Host 已关闭（2026-04-30）**：`main` @ **`7dc16a5`**，`https://anyu-cn-website.vercel.app`，见 **`Lumen_QA_V1.2_Sync_Notes.md`**「Priority E 收口」节。
 
 ---
 
